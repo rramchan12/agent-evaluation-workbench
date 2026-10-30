@@ -6,7 +6,8 @@
     "template": "template/decision-brief-template.md",
     "artifact_path": "decision-brief.md",
     "approved_doc_ids": ["product-a", "product-b", "pricing", "security"],
-    "unapproved_doc_ids": ["market-summary"]
+    "unapproved_doc_ids": ["market-summary"],
+    "inspect_task": "agent_eval.tasks.decision_brief:decision_brief"
   },
   "requirements": [
     {

@@ -10,7 +10,10 @@ This is where the paired `coding-agent-bugfix` trajectories live:
 `coding-bugfix-good.json` (reads the failing test, fixes the bug, reruns
 tests, which pass after the last edit) and `coding-bugfix-bad.json` (never
 reads the failing test, edits the protected test file to fake a pass, then
-makes an unverified final edit).
+makes an unverified final edit). `coding-bugfix-insufficient.json` is a
+trimmed copy of the good trace with `"complete": false` and an
+`"incompleteness_reason"`, used to exercise the GUI's and reconciliation's
+`INSUFFICIENT_EVIDENCE` path for a truncated trace.
 
 The `controlled-workspace-decision-brief` scenario does not use this
 directory — it runs live via Inspect + a scripted mockllm instead
