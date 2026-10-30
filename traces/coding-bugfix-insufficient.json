@@ -1,0 +1,40 @@
+{
+  "trajectory_id": "coding-bugfix-insufficient",
+  "scenario_id": "coding-agent-bugfix",
+  "system_under_test": "recorded-fixture/insufficient",
+  "complete": false,
+  "incompleteness_reason": "trace truncated before the agent's final test run was captured",
+  "final_output": "Fixed the subtract bug in src/calculator.py; re-running tests now.",
+  "artifacts": {
+    "src/calculator.py": "def add(a, b):\n    return a + b\n\n\ndef subtract(a, b):\n    return a - b\n"
+  },
+  "steps": [
+    {
+      "kind": "tool_call",
+      "name": "read_file",
+      "arguments": {"path": "tests/test_calculator.py"},
+      "result": "def test_subtract():\n    assert subtract(5, 3) == 2\n"
+    },
+    {
+      "kind": "tool_call",
+      "name": "read_file",
+      "arguments": {"path": "src/calculator.py"},
+      "result": "def add(a, b):\n    return a + b\n\n\ndef subtract(a, b):\n    return a + b\n"
+    },
+    {
+      "kind": "tool_call",
+      "name": "run_tests",
+      "arguments": {},
+      "result": {"passed": false, "failed": ["test_subtract"]}
+    },
+    {
+      "kind": "tool_call",
+      "name": "edit_file",
+      "arguments": {
+        "path": "src/calculator.py",
+        "content": "def add(a, b):\n    return a + b\n\n\ndef subtract(a, b):\n    return a - b\n"
+      },
+      "result": "wrote src/calculator.py"
+    }
+  ]
+}

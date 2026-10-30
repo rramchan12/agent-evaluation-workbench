@@ -16,6 +16,9 @@ dependencies = [
 dev = [
     "pytest>=8.0",
 ]
+gui = [
+    "streamlit>=1.38",
+]
 
 [project.scripts]
 agent-eval = "agent_eval.cli:main"
