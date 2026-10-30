@@ -2,9 +2,58 @@
 
 ## Architecture
 
-**Status:** Working architecture  
+**Status:** Working architecture — Stage 1 ("first slice") implemented  
 **Audience:** Contributors building or reviewing the harness  
 **Purpose:** Define the system boundary, component ownership, delivery stages, and success criteria  
+
+---
+
+## 0. Implementation status
+
+Stage 1 is implemented on `main` (`src/agent_eval/`, `scenarios/`, `traces/`,
+`expected/`, `tests/`) from a plan that has **not** gone through human
+plan-review (its frontmatter marked `implementationReviewStatus:
+unreviewed`); normal PR review, CI, and branch-protection rules still apply
+to any further change.
+
+What exists today, concretely:
+
+- `src/agent_eval/core/` + `src/agent_eval/evaluators/` implement the
+  framework-agnostic requirement/evidence/evaluator/reconciliation/release
+  layer described in §3, §6, and §9 — no Inspect AI import anywhere in
+  these two packages.
+- `src/agent_eval/trace/` implements both Stage 1 and Stage 2 trace
+  ingestion: `inspect_adapter.py` normalizes a live Inspect AI eval log,
+  and `import_recorded.py` normalizes a hand-authored recorded trace with
+  no Inspect AI involved at all.
+- `src/agent_eval/tasks/decision_brief.py` is the Inspect `@task` for the
+  §7 reference scenario (`scenarios/controlled-workspace-decision-brief/`),
+  driven by a scripted mockllm so it runs deterministically in CI.
+- `scenarios/coding-agent-bugfix/` is the Stage 2 recorded-trajectory
+  scenario, proving the same core contracts (§6's ownership boundary)
+  apply unchanged to a non-Inspect trajectory.
+- `src/agent_eval/cli.py` provides `agent-eval run` (execute + evaluate)
+  and `agent-eval evaluate` (replay-only, §5.4/§9 rule 7), installed as a
+  console script.
+- `src/agent_eval/reporting/render.py` produces the §5.7 JSON + static
+  HTML evidence report.
+- 29 unit + integration tests cover the core, the evaluators, and both
+  scenarios end to end.
+
+Known deviations from this document's original prescriptive language,
+decided during implementation (see each module's README for detail):
+
+- The generic "temporal evaluator" / "policy evaluator" / "citation
+  evaluator" examples in §5.5 became concrete, reusable, config-driven
+  evaluators: `verify_after_last_write`, `required_inspection` +
+  `forbidden_access`, and `citations_observed` respectively (plus
+  `last_result_matches` and `artifact_sections`).
+- `required_inspection` currently checks presence only, not strict
+  read-before-write temporal ordering — there is no generic "ordered"
+  evaluator yet.
+- The release policy (§3.4, §9 rule 1) treats a minor-requirement FAIL as
+  `REVIEW_REQUIRED` rather than an automatic release FAIL; only a
+  blocker/major FAIL forces `FAIL`.
 
 ---
 
@@ -419,29 +468,39 @@ The artifacts look equally good. The trajectory explains why only one is releasa
 
 ## 8. Build stages
 
-### Stage 0: Prove the Inspect extension points
+### Stage 0: Prove the Inspect extension points — done
 
-Build small probes for trace access, custom scorers, replay, artifacts, and report integration. Record any missing public API before writing the extension.
+Probed trace access, tool docstrings, attachment compaction, mockllm
+scripting, and `use_tools` wiring directly while building Stage 1 (see §0
+and each module README for the gotchas found; no missing public API was
+hit for this slice).
 
-### Stage 1: Ship one complete artifact scenario
+### Stage 1: Ship one complete artifact scenario — done
 
-Implement the controlled-workspace scenario, deterministic evaluators, a fake semantic judge, reconciliation, evaluator-only replay, and the evidence report.
+Implemented: the controlled-workspace scenario, deterministic evaluators,
+a fake semantic judge (`fake_judge`), reconciliation, evaluator-only
+replay (`agent-eval evaluate`), and the JSON + static HTML evidence
+report.
 
-### Stage 2: Apply the contract to a software trace
+### Stage 2: Apply the contract to a software trace — done
 
-Import a recorded coding-agent trajectory. Reuse the same requirement, evidence, judgment, and release contracts without changing their core shape.
+Implemented: `scenarios/coding-agent-bugfix/` imports a recorded
+coding-agent trajectory via `import_recorded_trace`, reusing the same
+requirement, evidence, judgment, and release contracts unchanged.
 
 ### Stage 3: Real judges, calibration, and human review
 
-Add one real model judge with full provenance. Build calibration cases, measure disagreement, support abstention, and route high-impact unresolved cases to human review.
+Not yet started. `fake_judge` remains a deterministic keyword-rubric
+stand-in; no real model judge, calibration set, or human-review routing
+exists yet.
 
 ### Stage 4: Ecosystem integration
 
-Add selected runtime and evaluator adapters, repeated-run analysis, baseline comparison, and release gates for CI.
+Not yet started.
 
 ### Stage 5: Extract only what proved portable
 
-Use the two working domains to decide whether to remain an Inspect extension, move capabilities upstream, maintain a limited fork, or extract a small runtime-neutral kernel.
+Not yet started — too early to decide; only two scenarios exist so far.
 
 ---
 
@@ -494,14 +553,14 @@ Detailed design will not include:
 
 The first implementation is done when it can:
 
-1. run the controlled-workspace scenario through Inspect AI;
-2. record an evidence-addressable trajectory;
-3. evaluate four requirement kinds;
-4. distinguish a good artifact produced through an invalid process from a valid run;
-5. rerun evaluators without rerunning the agent;
-6. explain disagreement and deterministic precedence;
-7. produce an auditable requirement-level release decision;
-8. apply the same core contracts to one recorded coding-agent trajectory.
+1. ✅ run the controlled-workspace scenario through Inspect AI — `tasks/decision_brief.py`, exercised by `tests/integration/test_decision_brief_scenario.py`;
+2. ✅ record an evidence-addressable trajectory — `trace/model.py` + `trace/inspect_adapter.py`;
+3. ✅ evaluate four requirement kinds — `scenarios/controlled-workspace-decision-brief/scenario.json` declares one outcome, obligation, prohibition, and verification requirement;
+4. ✅ distinguish a good artifact produced through an invalid process from a valid run — candidate-1 (invalid process) → `FAIL`, candidate-2 (valid process) → `PASS`, both with comparably strong final artifacts;
+5. ✅ rerun evaluators without rerunning the agent — `agent-eval evaluate` / `core/engine.py` consuming a saved `Trajectory`, with no Inspect AI involved;
+6. ✅ explain disagreement and deterministic precedence — `core/reconciliation.py`, unit-tested in `tests/unit/test_reconciliation_release.py`;
+7. ✅ produce an auditable requirement-level release decision — `core/release.py` + `reporting/render.py`;
+8. ✅ apply the same core contracts to one recorded coding-agent trajectory — `scenarios/coding-agent-bugfix/` + `trace/import_recorded.py`, exercised by `tests/integration/test_coding_bugfix_scenario.py`.
 
 We are done with the first architecture slice when these behaviors work end to end. The number of integrations is not a success metric.
 

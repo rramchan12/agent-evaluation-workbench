@@ -15,8 +15,33 @@ evaluate`), and a unit + integration test suite (29 tests, all passing).
 
 This implementation was produced from an **unreviewed** plan
 (`implementationReviewStatus: unreviewed` in the plan's frontmatter) — it
-has not gone through the human plan-review workflow. Normal PR review, CI
-checks, and branch-protection rules still apply before it is merged.
+has not gone through the human plan-review workflow. It has been merged to
+`main` as a fast-forward with all tests green, but normal PR review and CI
+checks still apply to any further change.
+
+## Getting started
+
+```powershell
+pip install -e .
+python -m pytest -q                        # 29 unit + integration tests
+
+# Live Inspect AI run against the decision-brief scenario, then evaluate
+agent-eval run `
+  --scenario scenarios/controlled-workspace-decision-brief/scenario.json `
+  --task agent_eval.tasks.decision_brief:decision_brief `
+  --candidate scenarios/controlled-workspace-decision-brief/candidates/candidate-2.json `
+  --model mockllm/model `
+  --out-dir out
+
+# Evaluator-only replay (no agent execution) against a saved trajectory
+agent-eval evaluate `
+  --scenario scenarios/coding-agent-bugfix/scenario.json `
+  --trajectory traces/coding-bugfix-good.json `
+  --out-dir out
+```
+
+Both commands exit non-zero when the release decision is `FAIL`, so either
+can gate a CI job.
 
 ## Start here
 

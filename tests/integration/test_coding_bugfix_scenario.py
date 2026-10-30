@@ -33,3 +33,33 @@ def test_recorded_coding_trace_matches_expected_verdicts(trace_id: str):
     assert report.release_decision.decision == expected["release_decision"]
     actual_requirements = {r.requirement.id: r.verdict for r in report.requirement_results}
     assert actual_requirements == expected["requirements"]
+
+
+@pytest.mark.parametrize(
+    ("trace_id", "expected_exit_code"),
+    [("coding-bugfix-good", 0), ("coding-bugfix-bad", 1)],
+)
+def test_cli_evaluate_auto_detects_recorded_trace_format(
+    trace_id: str, expected_exit_code: int, tmp_path
+):
+    """Regression test: ``agent-eval evaluate`` must auto-detect and correctly
+    parse recorded step-list trace JSON (the ``traces/`` fixture shape), not
+    just a saved ``Trajectory`` JSON -- otherwise it silently loads zero
+    events and produces meaningless verdicts.
+    """
+    from agent_eval.cli import build_parser
+
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "evaluate",
+            "--scenario",
+            str(SCENARIO_PATH),
+            "--trajectory",
+            str(TRACES_DIR / f"{trace_id}.json"),
+            "--out-dir",
+            str(tmp_path),
+        ]
+    )
+    exit_code = args.func(args)
+    assert exit_code == expected_exit_code

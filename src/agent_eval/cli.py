@@ -1,16 +1,19 @@
 """Command-line entry point: ``agent-eval run`` and ``agent-eval evaluate``.
 
 ``run`` drives a live Inspect AI task and evaluates the resulting trajectory.
-``evaluate`` replays a previously saved ``Trajectory`` JSON file against a
-scenario with zero model/Inspect involvement -- this is what proves
-evaluators are reproducible independently of the agent that produced the
-trace (Definition-of-Done item 5).
+``evaluate`` replays a previously recorded trajectory against a scenario with
+zero model/Inspect involvement -- this is what proves evaluators are
+reproducible independently of the agent that produced the trace
+(Definition-of-Done item 5). It accepts either a saved ``Trajectory`` JSON
+(from ``--save-trajectory``) or a hand-authored recorded-trace JSON (the
+``traces/`` fixture shape consumed by ``import_recorded_trace``).
 """
 
 from __future__ import annotations
 
 import argparse
 import importlib
+import json
 import sys
 from pathlib import Path
 
@@ -80,9 +83,24 @@ def cmd_run(args: argparse.Namespace) -> int:
     return exit_code
 
 
+def _load_trajectory(path: str | Path):
+    """Loads a trajectory file, accepting either a saved ``Trajectory`` JSON
+    (produced by ``Trajectory.save`` / ``--save-trajectory``) or a recorded
+    step-list JSON (the ``traces/`` fixture shape consumed by
+    ``import_recorded_trace``). Distinguished by the presence of a
+    top-level ``"steps"`` key, which only the recorded-trace shape has.
+    """
+    from agent_eval.trace.import_recorded import import_recorded_trace
+
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if "steps" in data:
+        return import_recorded_trace(path)
+    return Trajectory.from_dict(data)
+
+
 def cmd_evaluate(args: argparse.Namespace) -> int:
     scenario = load_scenario(args.scenario)
-    trajectory = Trajectory.load(args.trajectory)
+    trajectory = _load_trajectory(args.trajectory)
     report = run_engine(scenario, trajectory)
     _print_summary(report)
     if args.out_dir:
@@ -117,7 +135,11 @@ def build_parser() -> argparse.ArgumentParser:
         "evaluate", help="Evaluate a saved Trajectory JSON against a scenario (no Inspect/model calls)."
     )
     eval_parser.add_argument("--scenario", required=True, help="Path to scenario.json")
-    eval_parser.add_argument("--trajectory", required=True, help="Path to a saved Trajectory JSON")
+    eval_parser.add_argument(
+        "--trajectory",
+        required=True,
+        help="Path to a saved Trajectory JSON or a recorded step-list trace JSON",
+    )
     eval_parser.add_argument("--out-dir", help="Directory to write report.json/report.html into")
     eval_parser.add_argument(
         "--format", nargs="+", choices=["json", "html"], default=["json", "html"]
