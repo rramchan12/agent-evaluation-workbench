@@ -6,9 +6,17 @@ not just whether their final output looks correct.
 
 ## Status
 
-Planning and scaffolding stage. No implementation exists yet. This repository
-currently contains the design documents and the folder skeleton described below;
-each folder's `README.md` explains what belongs there once implementation begins.
+Stage 1 ("first slice") implemented: a framework-agnostic requirement /
+evidence / reconciliation / release core, a generic deterministic + fake
+semantic evaluator set, an Inspect AI adapter and task for the
+`controlled-workspace-decision-brief` scenario, a recorded-trace path for
+the `coding-agent-bugfix` scenario, a CLI (`agent-eval run` / `agent-eval
+evaluate`), and a unit + integration test suite (29 tests, all passing).
+
+This implementation was produced from an **unreviewed** plan
+(`implementationReviewStatus: unreviewed` in the plan's frontmatter) — it
+has not gone through the human plan-review workflow. Normal PR review, CI
+checks, and branch-protection rules still apply before it is merged.
 
 ## Start here
 

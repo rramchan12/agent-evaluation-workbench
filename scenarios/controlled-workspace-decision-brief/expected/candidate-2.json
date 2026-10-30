@@ -1,0 +1,9 @@
+{
+  "release_decision": "PASS",
+  "requirements": {
+    "report-complete": "PASS",
+    "required-sources-read": "PASS",
+    "approved-sources-only": "PASS",
+    "validate-after-last-write": "PASS"
+  }
+}

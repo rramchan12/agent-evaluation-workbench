@@ -1,0 +1,9 @@
+{
+  "release_decision": "FAIL",
+  "requirements": {
+    "report-complete": "PASS",
+    "required-sources-read": "FAIL",
+    "approved-sources-only": "FAIL",
+    "validate-after-last-write": "FAIL"
+  }
+}

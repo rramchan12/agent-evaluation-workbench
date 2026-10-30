@@ -3,15 +3,15 @@
 Renders the reconciled requirement verdicts and release decision into a
 portable evidence report.
 
-Planned modules:
+Implemented in `render.py`:
 
-- `json_report.py` — the canonical, machine-readable result: every
-  requirement's verdict, contributing evaluator judgments, disagreements,
-  evidence references, and the final release decision.
-- `html_report.py` — a static, human-readable rendering of the same data,
-  with each verdict linking back to its supporting trace events and
-  artifacts.
+- JSON report — the canonical, machine-readable result: every requirement's
+  verdict, contributing evaluator judgments (with evidence references), and
+  the final release decision (see `agent_eval.reporting.render.render_json`).
+- Static HTML report — a human-readable rendering of the same data, with
+  each verdict's evaluator judgments and evidence listed inline
+  (`agent_eval.reporting.render.render_html`).
 
 This is deliberately not a hosted dashboard — see ARCHITECTURE.md's product
 boundary. Export to external observability tools (Phoenix, MLflow, etc.) is
-handled separately, in `trace/otel_export.py`.
+a future extension, not part of this package today.

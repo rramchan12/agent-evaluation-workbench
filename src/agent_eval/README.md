@@ -16,9 +16,10 @@ reconciliation, and release decisions.
 
 ## Entry point
 
-A `cli.py` (not yet created) will expose two commands once implementation begins:
+`cli.py` exposes two commands (also installed as the `agent-eval` console
+script):
 
-- `agent-eval run --scenario ... --model ...` — live execution via Inspect, then evaluate
-- `agent-eval evaluate --trajectory ... --scenario ...` — evaluator-only replay, no execution
+- `agent-eval run --scenario ... --task module:function --candidate ... --model ...` — live execution via Inspect, then evaluate
+- `agent-eval evaluate --scenario ... --trajectory ...` — evaluator-only replay, no execution
 
 See [ARCHITECTURE.md §5](../../ARCHITECTURE.md) for the full execution model.

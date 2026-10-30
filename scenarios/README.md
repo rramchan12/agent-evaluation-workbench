@@ -6,14 +6,18 @@ the agent acts against, the requirement hierarchy, and the release policy.
 
 A scenario contains:
 
-- `scenario.yaml` — the task and what tools/fixture apply
-- `requirements.yaml` — the requirement hierarchy; each requirement
-  references an evaluator **by ID and config only** (see
+- `scenario.json` — the task/requirement hierarchy and release policy in one
+  document: `id`, `metadata` (task-specific config such as doc allow-lists),
+  and `requirements[]`, where each requirement declares its `kind`
+  (outcome/obligation/prohibition/verification), its `evidence` selector,
+  and the evaluators that judge it. Each evaluator entry references an
+  evaluator **by ID and config only** (see
   `src/agent_eval/evaluators/README.md`) — never new evaluator code
-- `release-policy.yaml` — the acceptance criteria that turn requirement
-  verdicts into a release decision
 - fixture content (a `template/`, a `workspace/`, or similar) — whatever the
   agent needs to act against
+- for scenarios evaluated from a recorded trace rather than a live Inspect
+  run (e.g. `coding-agent-bugfix`), the corresponding trace lives under the
+  top-level `traces/` directory, with its expected verdicts in `expected/`
 
 The agent being evaluated is supplied externally, at run time — it is never
 part of a scenario definition.

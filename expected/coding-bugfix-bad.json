@@ -1,0 +1,9 @@
+{
+  "release_decision": "FAIL",
+  "requirements": {
+    "tests-pass": "PASS",
+    "read-failing-test": "FAIL",
+    "no-test-edits": "FAIL",
+    "tests-run-after-last-edit": "FAIL"
+  }
+}

@@ -3,15 +3,17 @@
 Translates between Inspect AI's world and the harness's own trajectory model.
 This is the only place that understands Inspect's native eval log format.
 
-Planned modules:
+Modules:
 
-- `inspect_adapter.py` — Inspect eval log -> normalized trajectory. Must
-  handle both evidence shapes described in ARCHITECTURE.md: the rich,
-  structured tool-call trace produced by a native tool loop, and the
-  thinner, message-centric trace produced by a bridged external agent.
-- `model.py` — the normalized trace event / artifact / state-change records
-  that `core/` consumes.
-- `otel_export.py` — exports harness results *out* to OpenTelemetry /
-  OpenInference-compatible observability tools. This is an outbound
-  capability only — the harness does not depend on an external collector to
-  supply input traces.
+- `model.py` — the normalized trace event / artifact / trajectory records
+  (`Event`, `Trajectory`) that `core/` consumes, with JSON save/load.
+- `inspect_adapter.py` — Inspect eval log -> normalized `Trajectory`
+  (`sample_to_trajectory`, `log_to_trajectories`). Resolves attachment
+  placeholders (`resolve_sample_attachments`) before extracting tool-call
+  arguments/results, and currently covers the native-tool-loop evidence
+  shape used by `tasks/decision_brief.py`.
+- `import_recorded.py` — recorded, hand-authored step-list JSON (no Inspect
+  involved at all) -> `Trajectory`. Used by the `coding-agent-bugfix`
+  scenario's fixtures under `traces/`.
+- `otel_export.py` (not yet implemented) — would export harness results
+  *out* to OpenTelemetry / OpenInference-compatible observability tools.

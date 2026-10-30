@@ -3,16 +3,27 @@
 Generic, config-driven checks over trace evidence. No scenario-specific
 logic lives here — only capability, configured per requirement.
 
-Planned evaluators:
+Implemented in `checks.py`, registered by ID in `core/evaluators.py`:
 
-- `allow_list_policy.py` — a selected field's value must be in (or out of) a
-  configured list. Example uses: "only approved document IDs may be read,"
-  "writes may only occur under `src/`."
-- `temporal_order.py` — event A must precede or follow event B. Example
-  uses: "validate after the final write," "tests run after the last edit."
-- `reference_validity.py` — every reference (e.g. a citation) must point to
-  something the agent actually observed.
-- `schema_validation.py` — an artifact must conform to a declared schema.
+- `required_inspection` — every value in a configured list must appear in a
+  chosen argument field across the evidence bundle (e.g. "every approved
+  doc_id was read", "the failing test file was read").
+- `forbidden_access` — no event in the evidence bundle may have a chosen
+  argument field matching a configured forbidden value (e.g. "the
+  unapproved document was never read", "the test file was never edited").
+- `verify_after_last_write` — finds the last event for a configured write
+  tool and requires a successful event for a configured verify tool to
+  occur afterward (e.g. "validated after the final write", "tests rerun
+  after the last edit").
+- `last_result_matches` — the last event for a configured tool must have a
+  configured result field equal to a configured value (e.g. "the last test
+  run passed").
+- `artifact_sections` — a configured artifact (or the final output, if no
+  artifact key is given) must contain every configured required section
+  heading.
+- `citations_observed` — every citation found in an artifact (via a
+  configured regex) must correspond to a value actually observed through a
+  configured argument field in the evidence bundle.
 
 Each is intentionally reusable across unrelated scenarios; see
 [evaluators/README.md](../README.md) for a worked example.
