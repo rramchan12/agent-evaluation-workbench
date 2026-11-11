@@ -11,10 +11,7 @@
 ## 0. Implementation status
 
 Stage 1 is implemented on `main` (`src/agent_eval/`, `scenarios/`, `traces/`,
-`expected/`, `tests/`) from a plan that has **not** gone through human
-plan-review (its frontmatter marked `implementationReviewStatus:
-unreviewed`); normal PR review, CI, and branch-protection rules still apply
-to any further change.
+`expected/`, `tests/`).
 
 What exists today, concretely:
 
