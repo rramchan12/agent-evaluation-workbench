@@ -41,6 +41,14 @@ class ReleaseDecision:
             "contributing_requirements": self.contributing_requirements,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ReleaseDecision":
+        return cls(
+            decision=data["decision"],
+            rule_applied=data["rule_applied"],
+            contributing_requirements=data.get("contributing_requirements", []),
+        )
+
 
 def decide_release(outcomes: list[RequirementOutcome], release_policy: dict[str, Any] | None = None) -> ReleaseDecision:
     blocking_fail = [

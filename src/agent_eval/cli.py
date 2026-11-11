@@ -19,7 +19,9 @@ from pathlib import Path
 
 # Importing this registers every built-in deterministic/semantic evaluator.
 import agent_eval.evaluators  # noqa: F401
-from agent_eval.core.engine import evaluate as run_engine
+from agent_eval.core.calibration import run_calibration_file
+from agent_eval.core.engine import Report, evaluate as run_engine
+from agent_eval.core.human_review import HumanDecision, apply_human_review, items_needing_review
 from agent_eval.core.requirements import load_scenario
 from agent_eval.reporting.render import write_html_report, write_json_report
 from agent_eval.trace.model import Trajectory
@@ -108,6 +110,40 @@ def cmd_evaluate(args: argparse.Namespace) -> int:
     return 1 if report.release_decision.decision == "FAIL" else 0
 
 
+def cmd_review(args: argparse.Namespace) -> int:
+    report = Report.from_dict(json.loads(Path(args.report).read_text(encoding="utf-8")))
+
+    if not args.decisions:
+        items = items_needing_review(report)
+        if not items:
+            print("no requirements need review")
+            return 0
+        print(json.dumps([i.to_dict() for i in items], indent=2, default=str))
+        return 0
+
+    decisions_data = json.loads(Path(args.decisions).read_text(encoding="utf-8"))
+    decisions = [
+        HumanDecision.from_dict(requirement_id, data)
+        for requirement_id, data in decisions_data.items()
+    ]
+    updated = apply_human_review(report, decisions)
+    _print_summary(updated)
+    if args.out_dir:
+        _write_reports(updated, Path(args.out_dir), args.format)
+    else:
+        write_json_report(updated, args.report)
+    return 1 if updated.release_decision.decision == "FAIL" else 0
+
+
+def cmd_calibrate(args: argparse.Namespace) -> int:
+    calibration_report = run_calibration_file(args.cases)
+    for result in calibration_report.results:
+        status = "OK" if result.correct else "MISMATCH"
+        print(f"  [{status:>8}] {result.case_id}: expected={result.expected} actual={result.actual}")
+    print(f"evaluator: {calibration_report.evaluator_id}  accuracy: {calibration_report.accuracy:.2f}")
+    return 0 if calibration_report.accuracy >= args.min_accuracy else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="agent-eval")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -145,6 +181,36 @@ def build_parser() -> argparse.ArgumentParser:
         "--format", nargs="+", choices=["json", "html"], default=["json", "html"]
     )
     eval_parser.set_defaults(func=cmd_evaluate)
+
+    review_parser = subparsers.add_parser(
+        "review",
+        help="List requirements needing human review, or apply decisions and recompute a report.",
+    )
+    review_parser.add_argument("--report", required=True, help="Path to a report.json")
+    review_parser.add_argument(
+        "--decisions",
+        help=(
+            "Path to a JSON file mapping requirement_id -> "
+            '{"verdict", "reviewer", "explanation"?}. '
+            "Without this, lists the requirements needing review instead."
+        ),
+    )
+    review_parser.add_argument(
+        "--out-dir", help="Directory to write the updated report.json/report.html into"
+    )
+    review_parser.add_argument(
+        "--format", nargs="+", choices=["json", "html"], default=["json", "html"]
+    )
+    review_parser.set_defaults(func=cmd_review)
+
+    calibrate_parser = subparsers.add_parser(
+        "calibrate", help="Run a judge against hand-labeled calibration cases and report accuracy."
+    )
+    calibrate_parser.add_argument("--cases", required=True, help="Path to a calibration cases JSON file")
+    calibrate_parser.add_argument(
+        "--min-accuracy", type=float, default=1.0, help="Exit non-zero if accuracy falls below this"
+    )
+    calibrate_parser.set_defaults(func=cmd_calibrate)
 
     return parser
 

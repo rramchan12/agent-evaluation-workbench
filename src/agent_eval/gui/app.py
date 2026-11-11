@@ -15,7 +15,9 @@ st.title("Agent Evaluation Harness")
 st.markdown(
     "Use the **Run** page to launch a live Inspect AI evaluation, or the "
     "**Replay** page to evaluate a recorded trajectory with zero model "
-    "calls. Both pages render the same release decision / requirement / "
+    "calls. Use **Review** to resolve requirements needing a human "
+    "decision, and **Calibration** to measure a judge against labeled "
+    "cases. The Run and Replay pages render the same release decision / requirement / "
     "evidence report, backed by `agent_eval.core.engine.evaluate` — the "
     "same call the `agent-eval` CLI makes."
 )

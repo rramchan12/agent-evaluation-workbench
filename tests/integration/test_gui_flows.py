@@ -121,3 +121,49 @@ def test_run_task_error_surfaces_as_error_stage_not_a_crash():
     assert last is not None
     assert last.stage == "error"
     assert last.error
+
+
+# ---------------------------------------------------------------------------
+# Review and Calibration pages (Stage 3)
+# ---------------------------------------------------------------------------
+
+REVIEW_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "3_review.py"
+CALIBRATION_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "4_calibration.py"
+
+
+def test_review_page_applies_human_decision_and_recomputes_release():
+    from agent_eval.core.engine import evaluate
+    from agent_eval.core.requirements import load_scenario
+    from agent_eval.gui.scenario_catalog import discover_scenarios, discover_traces
+    from agent_eval.gui.trajectory_loader import trajectory_from_path
+
+    info = next(s for s in discover_scenarios() if s.name == "Coding Agent Bugfix")
+    trace = next(t for t in discover_traces(scenario_id=info.id) if t.stem == "coding-bugfix-good")
+    trajectory = trajectory_from_path(trace)
+    report = evaluate(load_scenario(info.path), trajectory)
+    report.requirement_results[0].verdict = "REVIEW_REQUIRED"
+    flagged_id = report.requirement_results[0].requirement.id
+
+    at = AppTest.from_file(str(REVIEW_PAGE), default_timeout=30)
+    at.session_state["gui_report"] = report
+    at.session_state["gui_trajectory"] = trajectory
+    at.run()
+    assert not at.exception
+    at.selectbox(key=f"decision_{flagged_id}").set_value("PASS")
+    at.text_input(key="review_reviewer").set_value("alice")
+    at.button[-1].click().run()
+
+    assert not at.exception
+    updated = at.session_state["gui_report"]
+    assert updated.requirement_results[0].verdict == "PASS"
+    assert any(j.kind == "human" for j in updated.requirement_results[0].judgments)
+
+
+def test_calibration_page_reports_accuracy():
+    at = AppTest.from_file(str(CALIBRATION_PAGE), default_timeout=60).run()
+    assert not at.exception
+    at.button[0].click().run()
+
+    assert not at.exception
+    assert not at.error
+    assert len(at.metric) == 1
