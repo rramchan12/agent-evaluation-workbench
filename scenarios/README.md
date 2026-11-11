@@ -21,3 +21,13 @@ A scenario contains:
 
 The agent being evaluated is supplied externally, at run time — it is never
 part of a scenario definition.
+
+## judge-calibration/
+
+Not a scenario (there is no agent, no requirement hierarchy, no release
+policy) — it is a calibration fixture for `agent-eval calibrate`
+(`core/calibration.py`): a hand-labeled set of evidence bundles and their
+known-correct verdicts, used to measure a judge's accuracy before trusting
+it in a real scenario. See `evaluators/semantic/README.md` for the cases
+file format.
+

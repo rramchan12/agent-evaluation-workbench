@@ -15,7 +15,11 @@ from agent_eval.core.evidence import EvidenceBundle
 from agent_eval.core.requirements import EvaluatorAssignment, Requirement
 
 Verdict = Literal["PASS", "FAIL", "REVIEW_REQUIRED", "INSUFFICIENT_EVIDENCE"]
-EvaluatorKind = Literal["deterministic", "semantic"]
+EvaluatorKind = Literal["deterministic", "semantic", "human"]
+"""``human`` judgments are never produced by a registered evaluator
+function -- they are attached post-hoc by ``core/human_review.py`` after a
+report already flagged a requirement for review -- but they share the same
+``Judgment`` shape so reconciliation and reporting treat them uniformly."""
 
 
 @dataclass
@@ -40,6 +44,18 @@ class Judgment:
             "confidence": self.confidence,
             "metadata": self.metadata,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Judgment":
+        return cls(
+            evaluator_id=data["evaluator_id"],
+            kind=data["kind"],
+            verdict=data["verdict"],
+            explanation=data["explanation"],
+            evidence_event_ids=data.get("evidence_event_ids", []),
+            confidence=data.get("confidence"),
+            metadata=data.get("metadata", {}),
+        )
 
 
 EvaluatorFn = Callable[[Requirement, EvidenceBundle, dict[str, Any]], Judgment]

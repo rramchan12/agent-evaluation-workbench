@@ -3,6 +3,11 @@ into one requirement verdict.
 
 Rules, first match wins (ARCHITECTURE.md §3.4 / §5.6):
 
+0. Any ``human`` judgment present (``core/human_review.py`` attaches one
+   after a person resolves a flagged requirement): that decision wins
+   outright, regardless of what the deterministic/semantic judgments or
+   trajectory completeness say -- a human resolving a review is the
+   point of asking.
 1. Incomplete trace, or any evaluator abstained (``INSUFFICIENT_EVIDENCE``):
    -> ``INSUFFICIENT_EVIDENCE``.
 2. Any deterministic ``FAIL``: -> ``FAIL`` (deterministic precedence; a
@@ -35,6 +40,14 @@ class ReconciledVerdict:
 
 
 def reconcile(judgments: list[Judgment], trajectory_complete: bool) -> ReconciledVerdict:
+    human = [j for j in judgments if j.kind == "human"]
+    if human:
+        return ReconciledVerdict(
+            verdict=human[-1].verdict,
+            rule_applied="human_resolution",
+            judgments=judgments,
+        )
+
     if not trajectory_complete or any(j.verdict == "INSUFFICIENT_EVIDENCE" for j in judgments):
         return ReconciledVerdict(
             verdict="INSUFFICIENT_EVIDENCE",

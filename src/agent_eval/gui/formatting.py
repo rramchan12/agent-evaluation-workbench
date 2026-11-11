@@ -73,3 +73,18 @@ def resolve_evidence(trajectory: Trajectory, event_ids: list[str]) -> list[Event
         if event is not None:
             resolved.append(event)
     return resolved
+
+
+def calibration_rows(calibration_report) -> list[dict[str, object]]:
+    """One flat row per calibration case, for a table view."""
+    return [
+        {
+            "case": r.case_id,
+            "expected": r.expected,
+            "actual": r.actual,
+            "correct": "✅" if r.correct else "❌",
+            "confidence": r.judgment.confidence,
+            "explanation": r.judgment.explanation,
+        }
+        for r in calibration_report.results
+    ]

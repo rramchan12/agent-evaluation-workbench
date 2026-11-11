@@ -2,7 +2,7 @@
 
 ## Architecture
 
-**Status:** Working architecture — Stage 1 ("first slice") implemented  
+**Status:** Working architecture — Stages 1-3 implemented  
 **Audience:** Contributors building or reviewing the harness  
 **Purpose:** Define the system boundary, component ownership, delivery stages, and success criteria  
 
@@ -10,7 +10,7 @@
 
 ## 0. Implementation status
 
-Stage 1 is implemented on `main` (`src/agent_eval/`, `scenarios/`, `traces/`,
+Stages 1-3 are implemented on `main` (`src/agent_eval/`, `scenarios/`, `traces/`,
 `expected/`, `tests/`).
 
 What exists today, concretely:
@@ -34,8 +34,29 @@ What exists today, concretely:
   console script.
 - `src/agent_eval/reporting/render.py` produces the §5.7 JSON + static
   HTML evidence report.
-- 29 unit + integration tests cover the core, the evaluators, and both
-  scenarios end to end.
+- `src/agent_eval/evaluators/semantic/real_judge.py` is the Stage 3 real
+  model judge (Inspect AI `get_model`/`Model.generate`), sharing the
+  `judge_interface.py` response contract (`PASS`/`FAIL`/
+  `INSUFFICIENT_EVIDENCE` + explanation + optional confidence) with
+  `fake_judge`. It supports a `mock_responses` test/calibration config
+  key (scripted raw judge responses via `mockllm`, never set in
+  production scenario config) and a `min_confidence` abstention
+  threshold.
+- `src/agent_eval/core/calibration.py` scores a judge against a
+  hand-labeled fixture (`scenarios/judge-calibration/cases.json`) and is
+  exposed as `agent-eval calibrate`.
+- `src/agent_eval/core/human_review.py` applies a human decision as a
+  `kind="human"` `Judgment` over an already-computed `Report`, re-running
+  reconciliation and release; exposed as `agent-eval review`. This is a
+  **post-hoc application over a persisted `Report`**, not a
+  scenario-declared evaluator assignment like deterministic/semantic —
+  a deliberate Stage 3 scoping simplification versus this document's
+  original framing of human review as a first-class evaluator kind.
+  Reconciliation treats a `human` judgment as taking precedence over
+  every other rule, including the incomplete-trajectory abstention rule.
+- 83 unit + integration tests cover the core, the evaluators, both
+  scenarios, and the Stage 3 judge/calibration/review additions end to
+  end.
 
 Known deviations from this document's original prescriptive language,
 decided during implementation (see each module's README for detail):
@@ -485,11 +506,16 @@ Implemented: `scenarios/coding-agent-bugfix/` imports a recorded
 coding-agent trajectory via `import_recorded_trace`, reusing the same
 requirement, evidence, judgment, and release contracts unchanged.
 
-### Stage 3: Real judges, calibration, and human review
+### Stage 3: Real judges, calibration, and human review — done
 
-Not yet started. `fake_judge` remains a deterministic keyword-rubric
-stand-in; no real model judge, calibration set, or human-review routing
-exists yet.
+Implemented: `real_judge` (a real Inspect AI model judge sharing the
+`fake_judge` response contract, with `mock_responses` for deterministic
+tests/calibration and `min_confidence` abstention), judge calibration
+(`core/calibration.py` + `agent-eval calibrate` against
+`scenarios/judge-calibration/cases.json`), and human review
+(`core/human_review.py` + `agent-eval review`, applied post-hoc over a
+persisted `Report` rather than as a scenario-declared evaluator
+assignment — see §0).
 
 ### Stage 4: Ecosystem integration
 

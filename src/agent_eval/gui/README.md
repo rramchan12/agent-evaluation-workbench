@@ -19,6 +19,15 @@ streamlit run src/agent_eval/gui/app.py
 - `pages/2_replay.py` — select a scenario + a `traces/`-fixture or an
   uploaded trajectory/trace JSON, evaluate it directly (no Inspect AI, no
   model call).
+- `pages/3_review.py` — Stage 3 human review: lists requirements at
+  `REVIEW_REQUIRED` / `INSUFFICIENT_EVIDENCE` (from the last Run/Replay
+  result or an uploaded `report.json`), records a reviewer verdict, and
+  recomputes the release decision with `apply_human_review` (same as
+  `agent-eval review`).
+- `pages/4_calibration.py` — Stage 3 judge calibration: runs
+  `scenarios/*/cases.json` (or an upload) through `run_calibration_file`
+  and shows accuracy against a minimum threshold (same as
+  `agent-eval calibrate`).
 - `results_view.py` — the shared report renderer both pages call: release
   decision banner, per-requirement cards, per-judgment rows, an evidence
   expander resolving event ids to their actual `Event`, and a visible

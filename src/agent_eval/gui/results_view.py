@@ -22,7 +22,7 @@ def _badge_html(verdict: str) -> str:
     )
 
 
-def render_results(report: Report, trajectory: Trajectory) -> None:
+def render_results(report: Report, trajectory: Trajectory | None) -> None:
     release = report.release_decision
 
     st.subheader("Release decision")
@@ -32,7 +32,7 @@ def render_results(report: Report, trajectory: Trajectory) -> None:
         f"trajectory: {report.trajectory_id}"
     )
 
-    if not trajectory.complete:
+    if trajectory is not None and not trajectory.complete:
         st.info(
             "Trajectory marked incomplete: "
             f"{trajectory.incompleteness_reason or 'reason not recorded'}"
@@ -54,13 +54,22 @@ def render_results(report: Report, trajectory: Trajectory) -> None:
                 st.warning("Evaluators disagreed on this requirement's verdict.")
 
             for judgment in view.judgments:
+                confidence = (
+                    f" · confidence {judgment.confidence:.2f}"
+                    if judgment.confidence is not None
+                    else ""
+                )
                 st.markdown(
-                    f"- **{judgment.evaluator_id}** ({judgment.kind}) "
+                    f"- **{judgment.evaluator_id}** ({judgment.kind}{confidence}) "
                     f"{_badge_html(judgment.verdict)} — {judgment.explanation}",
                     unsafe_allow_html=True,
                 )
 
-            events = resolve_evidence(trajectory, view.evidence_event_ids)
+            events = (
+                resolve_evidence(trajectory, view.evidence_event_ids)
+                if trajectory is not None
+                else []
+            )
             if events:
                 st.write("Evidence:")
                 for event in events:

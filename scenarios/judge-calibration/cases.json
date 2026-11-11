@@ -1,0 +1,73 @@
+{
+  "evaluator_id": "real_judge",
+  "rubric": "The final output must summarize the bug fix and confirm tests were added, without mentioning unrelated changes.",
+  "cases": [
+    {
+      "id": "clear-pass",
+      "description": "A well-formed summary that satisfies the rubric.",
+      "expected_verdict": "PASS",
+      "config": {
+        "mock_responses": [
+          "{\"verdict\": \"PASS\", \"explanation\": \"Summary covers the fix and new tests.\", \"confidence\": 0.95}"
+        ]
+      },
+      "bundle": {
+        "final_output": "Fixed the off-by-one error in the paginator and added a regression test covering the last page."
+      }
+    },
+    {
+      "id": "clear-fail",
+      "description": "An output that omits the required test confirmation.",
+      "expected_verdict": "FAIL",
+      "config": {
+        "mock_responses": [
+          "{\"verdict\": \"FAIL\", \"explanation\": \"No mention of tests being added.\", \"confidence\": 0.9}"
+        ]
+      },
+      "bundle": {
+        "final_output": "Fixed the off-by-one error in the paginator."
+      }
+    },
+    {
+      "id": "ambiguous-output",
+      "description": "An output too vague for the judge to decide either way.",
+      "expected_verdict": "INSUFFICIENT_EVIDENCE",
+      "config": {
+        "mock_responses": [
+          "{\"verdict\": \"INSUFFICIENT_EVIDENCE\", \"explanation\": \"Output does not state whether a fix was made or tested.\", \"confidence\": 0.4}"
+        ]
+      },
+      "bundle": {
+        "final_output": "Done."
+      }
+    },
+    {
+      "id": "incomplete-trajectory",
+      "description": "A trajectory the harness already knows is incomplete, so the judge must abstain before even calling the model.",
+      "expected_verdict": "INSUFFICIENT_EVIDENCE",
+      "config": {
+        "mock_responses": [
+          "{\"verdict\": \"PASS\", \"explanation\": \"should never be reached\", \"confidence\": 0.99}"
+        ]
+      },
+      "bundle": {
+        "trajectory_complete": false,
+        "final_output": "Fixed the bug and added tests."
+      }
+    },
+    {
+      "id": "low-confidence-abstention",
+      "description": "The model answers PASS but with confidence below min_confidence, so the judge must abstain.",
+      "expected_verdict": "INSUFFICIENT_EVIDENCE",
+      "config": {
+        "min_confidence": 0.7,
+        "mock_responses": [
+          "{\"verdict\": \"PASS\", \"explanation\": \"Looks okay but I'm not fully sure.\", \"confidence\": 0.5}"
+        ]
+      },
+      "bundle": {
+        "final_output": "Fixed the off-by-one error in the paginator, probably added coverage."
+      }
+    }
+  ]
+}

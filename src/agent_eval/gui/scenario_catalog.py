@@ -83,3 +83,8 @@ def discover_traces(traces_dir: Path = TRACES_DIR, scenario_id: str | None = Non
         if data.get("scenario_id") == scenario_id:
             matching.append(path)
     return matching
+
+
+def discover_calibration_files(scenarios_dir: Path = SCENARIOS_DIR) -> list[Path]:
+    """Every ``scenarios/*/cases.json`` calibration file (Stage 3)."""
+    return sorted(scenarios_dir.glob("*/cases.json"))
