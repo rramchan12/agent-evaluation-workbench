@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Open Agent Evaluation Harness"
+abstract: "A replay-capable evaluation harness that determines whether tool-using agents satisfy declared requirements through an acceptable, evidenced trajectory, not just whether the final output looks correct."
+type: software
+authors:
+  - family-names: Ramchandran
+    given-names: Ravi
+version: 0.1.0
+date-released: 2026-11-11
+license: MIT
+repository-code: "https://github.com/rramchan12/agent-evaluation-workbench"
+keywords:
+  - agent evaluation
+  - trajectory evaluation
+  - Inspect AI
+  - release gating

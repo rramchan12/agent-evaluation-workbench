@@ -14,11 +14,12 @@ the `coding-agent-bugfix` scenario, a CLI (`agent-eval run` / `agent-eval
 evaluate`), a Streamlit GUI for both flows, and a unit + integration test
 suite (61 tests, all passing).
 
-This implementation was produced from an **unreviewed** plan
-(`implementationReviewStatus: unreviewed` in the plan's frontmatter) — it
-has not gone through the human plan-review workflow. It has been merged to
-`main` as a fast-forward with all tests green, but normal PR review and CI
-checks still apply to any further change.
+This is an early (v0.1) release: the semantic evaluators are scripted fakes,
+and some checks are intentionally simple (for example, required inspection is
+presence-only, with no ordering evaluator yet). See
+[ARCHITECTURE.md](./ARCHITECTURE.md) §0 for known deviations and the roadmap.
+
+Licensed under the [MIT License](./LICENSE); cite via [CITATION.cff](./CITATION.cff).
 
 ## Getting started
 
