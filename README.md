@@ -6,17 +6,20 @@ not just whether their final output looks correct.
 
 ## Status
 
-Stage 1 ("first slice") implemented: a framework-agnostic requirement /
-evidence / reconciliation / release core, a generic deterministic + fake
-semantic evaluator set, an Inspect AI adapter and task for the
-`controlled-workspace-decision-brief` scenario, a recorded-trace path for
-the `coding-agent-bugfix` scenario, a CLI (`agent-eval run` / `agent-eval
-evaluate`), a Streamlit GUI for both flows, and a unit + integration test
-suite (61 tests, all passing).
+Stages 1-3 implemented: a framework-agnostic requirement / evidence /
+reconciliation / release core, a generic deterministic + semantic evaluator
+set (a deterministic `fake_judge` plus a real model-backed `real_judge`), an
+Inspect AI adapter and task for the `controlled-workspace-decision-brief`
+scenario, a recorded-trace path for the `coding-agent-bugfix` scenario, judge
+calibration and human-review CLI commands, a CLI (`agent-eval run` /
+`agent-eval evaluate` / `agent-eval review` / `agent-eval calibrate`), a
+Streamlit GUI for the run/replay flows, and a unit + integration test suite
+(83 tests, all passing).
 
-This is an early (v0.1) release: the semantic evaluators are scripted fakes,
-and some checks are intentionally simple (for example, required inspection is
-presence-only, with no ordering evaluator yet). See
+This is an early (v0.1) release: some checks are intentionally simple (for
+example, required inspection is presence-only, with no ordering evaluator
+yet), and human review is applied post-hoc over a persisted report rather
+than as a scenario-declared evaluator assignment. See
 [ARCHITECTURE.md](./ARCHITECTURE.md) §0 for known deviations and the roadmap.
 
 Licensed under the [MIT License](./LICENSE); cite via [CITATION.cff](./CITATION.cff).
@@ -25,7 +28,7 @@ Licensed under the [MIT License](./LICENSE); cite via [CITATION.cff](./CITATION.
 
 ```powershell
 pip install -e .
-python -m pytest -q                        # 61 unit + integration tests
+python -m pytest -q                        # 83 unit + integration tests
 
 # Live Inspect AI run against the decision-brief scenario, then evaluate
 agent-eval run `
@@ -40,10 +43,19 @@ agent-eval evaluate `
   --scenario scenarios/coding-agent-bugfix/scenario.json `
   --trajectory traces/coding-bugfix-good.json `
   --out-dir out
+
+# Score a judge against a hand-labeled calibration fixture
+agent-eval calibrate --cases scenarios/judge-calibration/cases.json
+
+# List requirements still needing human review in a saved report, or
+# apply decisions and recompute the release
+agent-eval review --report out/report.json
+agent-eval review --report out/report.json --decisions decisions.json --out-dir out
 ```
 
-Both commands exit non-zero when the release decision is `FAIL`, so either
-can gate a CI job.
+Both `run` and `evaluate` exit non-zero when the release decision is `FAIL`,
+so either can gate a CI job; `calibrate` exits non-zero when accuracy falls
+below `--min-accuracy` (default 1.0).
 
 ## GUI
 

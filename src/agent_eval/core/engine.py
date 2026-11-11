@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from agent_eval.core.evaluators import run_assignment
+from agent_eval.core.evaluators import Judgment, run_assignment
 from agent_eval.core.evidence import select_evidence
 from agent_eval.core.reconciliation import reconcile
 from agent_eval.core.release import ReleaseDecision, RequirementOutcome, decide_release
@@ -40,6 +40,28 @@ class RequirementResult:
             "evidence_event_ids": self.evidence_event_ids,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "RequirementResult":
+        """Reconstructs a result from a persisted ``report.json``. The
+        rebuilt ``Requirement`` only carries the fields the report itself
+        recorded (id/kind/description/importance) -- it never had the
+        scenario's ``evidence``/``evaluators`` config to begin with, and
+        ``core/human_review.py`` does not need them to resolve a review.
+        """
+        requirement = Requirement(
+            id=data["requirement_id"],
+            kind=data["kind"],
+            description=data["description"],
+            importance=data["importance"],
+        )
+        return cls(
+            requirement=requirement,
+            verdict=data["verdict"],
+            rule_applied=data["rule_applied"],
+            judgments=[Judgment.from_dict(j) for j in data.get("judgments", [])],
+            evidence_event_ids=data.get("evidence_event_ids", []),
+        )
+
 
 @dataclass
 class Report:
@@ -65,6 +87,25 @@ class Report:
             "requirement_results": [r.to_dict() for r in self.requirement_results],
             "release_decision": self.release_decision.to_dict(),
         }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "Report":
+        """Reconstructs a ``Report`` from a persisted ``report.json`` --
+        used by ``agent-eval review`` to load a report, find/apply human
+        review, and recompute it without rerunning the agent or evaluators.
+        """
+        return cls(
+            scenario_id=data["scenario_id"],
+            scenario_name=data["scenario_name"],
+            trajectory_id=data["trajectory_id"],
+            system_under_test=data["system_under_test"],
+            trajectory_sha256=data["trajectory_sha256"],
+            requirement_results=[
+                RequirementResult.from_dict(r) for r in data["requirement_results"]
+            ],
+            release_decision=ReleaseDecision.from_dict(data["release_decision"]),
+            generated_at=data.get("generated_at", ""),
+        )
 
 
 def evaluate(scenario: Scenario, trajectory: Trajectory) -> Report:

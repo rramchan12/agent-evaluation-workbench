@@ -1,6 +1,6 @@
 """Stage 1 semantic evaluator: a deterministic stand-in for a real model
-judge, behind the same evidence-bounded contract a real judge will use in
-Stage 3. It never calls a model.
+judge, behind the evidence-bounded contract defined in ``judge_interface.py``
+(the same one ``real_judge`` implements in Stage 3). It never calls a model.
 
 A judge is a measuring instrument: every judgment records the judge's id,
 its rubric, and the evidence window it was shown, so the fake judge's
@@ -14,15 +14,7 @@ from typing import Any
 from agent_eval.core.evaluators import Judgment, register
 from agent_eval.core.evidence import EvidenceBundle
 from agent_eval.core.requirements import Requirement
-
-
-def _text_source(bundle: EvidenceBundle, source: str) -> str | None:
-    if source == "final_output":
-        return bundle.final_output
-    if source.startswith("artifact:"):
-        key = source.split(":", 1)[1]
-        return bundle.artifacts.get(key)
-    return None
+from agent_eval.evaluators.semantic.judge_interface import text_source as _text_source
 
 
 @register("fake_judge", "semantic")
