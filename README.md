@@ -106,6 +106,14 @@ rolls all per-requirement verdicts up into one PASS/FAIL for the whole run.
 > its GUI own requirement evidence, judgment reconciliation, and the
 > release decision.
 
+The requirement/evidence/reconciliation layer above is deliberately kept free
+of any Inspect AI import in `core/` and `evaluators/` (§0). That boundary is
+not incidental: it is what makes the layer portable to a trajectory produced
+by a different agent runtime, not just a different scenario. [Stage
+4](./ARCHITECTURE.md#stage-4-ecosystem-integration--next) tests that claim
+directly, starting with one trace captured from the Microsoft Agent
+Framework rather than Inspect AI.
+
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full system design behind
 this pipeline, and [IDEATION.md](./IDEATION.md) for the research gap it was
 built to fill.
@@ -119,11 +127,15 @@ built to fill.
   model, the Inspect AI integration, and the staged delivery roadmap.
 - [CAPABILITY_DISCOVERY.md](./CAPABILITY_DISCOVERY.md) — a documentation-checked
   comparison of seven candidate runtimes/evaluation libraries against this
-  project's requirement/evidence/judgment/reconciliation/release chain, feeding
-  Stage 4 ecosystem-integration decisions.
-- [BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md) — the planned, trace-driven
-  benchmark that will validate those Stage 4 framework-adoption decisions with
-  evidence (discovery done, benchmark execution not yet started).
+  project's requirement/evidence/judgment/reconciliation/release chain: none
+  implement the full chain natively, and reconciliation/abstention is the
+  uniform gap. Feeds Stage 4 ecosystem-integration decisions.
+- [BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md) — the planned, ten-trace,
+  seven-framework benchmark that will eventually turn that discovery into
+  measured evidence. Stage 4's near-term scope (one framework, one trace
+  pair, one new adapter — see [ARCHITECTURE.md
+  §8](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)) is a smaller,
+  concrete first slice of this larger plan, not a replacement for it.
 
 ## Layout
 

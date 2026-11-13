@@ -519,9 +519,11 @@ assignment — see §0).
 
 ### Stage 4: Ecosystem integration — next
 
-Not yet started. Goal: let the harness consume evidence that other systems
-already produce, without changing the core contracts (§9 rule 1, "reuse
-before rebuilding"). Proposed scope, in priority order:
+Not yet started. Goal: prove the §0 Inspect-free boundary around `core/` and
+`evaluators/` is not just tidy layering but genuine portability — the
+requirement/evidence/judgment/reconciliation/release chain must evaluate a
+trajectory produced by a runtime this repo did not write, without changing
+either package (§9 rule 1, "reuse before rebuilding").
 
 Before committing to specific adapters, [CAPABILITY_DISCOVERY.md](./CAPABILITY_DISCOVERY.md)
 sourced a documentation-checked comparison of seven candidate runtimes and
@@ -532,27 +534,42 @@ finding: stored-run replay without re-execution is already common across the
 field (Inspect AI, LangSmith, MAF), but cross-evaluator reconciliation,
 disagreement handling, and abstention are uniformly custom or unverified —
 confirming that layer, not the runner, is this project's point of
-differentiation (see IDEATION.md §5). [BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md)
-turns that discovery into a planned, trace-driven comparison (ten canonical
-traces, `T1`-`T10`) to validate framework-adoption decisions for this stage
-with evidence rather than assumption. Status of that plan: discovery done,
-benchmark execution not yet started.
+differentiation (see IDEATION.md §5). That finding is currently a documented
+claim, not a demonstrated one — Stage 4's near-term scope exists to close
+that gap with one concrete, evaluated example before attempting the larger
+[BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md) comparison (ten canonical traces,
+`T1`-`T10`, across all seven frameworks).
 
-1. **OpenTelemetry / OpenInference trace import** — a new
-   `trace/import_otel.py` normalizing OTLP/OpenInference GenAI spans into
+**Near-term scope — one framework, one adapter, one trace pair:**
+
+1. **Microsoft Agent Framework (MAF) trace import** — a new
+   `trace/import_maf.py` normalizing a MAF run's native trace/messages into
    the existing `Trajectory`, alongside `inspect_adapter.py` and
-   `import_recorded.py`. `agent-eval evaluate` auto-detects it.
-2. **Trace-store adapters** — read-only import from one of Langfuse,
-   Phoenix, or MLflow (pick one first; chosen by the first real user).
+   `import_recorded.py`. `agent-eval evaluate` auto-detects it. The MAF
+   agent itself is a minimal, local `agent-framework-core` build (no
+   Foundry dependency) reusing the controlled-workspace tool surface, run
+   with a scripted/deterministic chat client for the same reason
+   `decision_brief` uses `mockllm` — a reproducible CI artifact, not a
+   live-model demo.
+2. **Trace pair** — one valid-process run and one prohibited-source run
+   (the MAF analogue of `candidate-1`/`candidate-2` and `BENCHMARK_PLAN.md`'s
+   `T1`/`T2`), so the existing evaluators and reconciliation produce a PASS
+   and a FAIL from two runs that never touched Inspect AI.
 3. **CI gate** — a documented `agent-eval` invocation and exit-code
-   contract so the release decision can fail a pipeline.
-4. **Publish results back** — export requirement-level verdicts as
-   evaluation scores/annotations to the chosen trace store.
+   contract so the release decision can fail a pipeline, now demonstrated
+   against both an Inspect AI trace and a MAF trace.
 
-Exit criterion: one trace captured outside this repo is evaluated, replayed,
-and reported with the same requirement/evidence/release contracts, with no
-changes to `core/` or `evaluators/`. Not in scope: a hosted service, a new
-agent runner, or more than one store adapter.
+Exit criterion for this slice: the MAF-sourced trace pair is evaluated,
+replayed, and reported with the same requirement/evidence/release contracts
+used for the Inspect AI scenarios, with no changes to `core/` or
+`evaluators/`.
+
+**Deferred to the full benchmark** (not in this stage's scope): a generic
+OpenTelemetry/OpenInference import adapter, trace-store adapters (Langfuse,
+Phoenix, MLflow), publishing verdicts back to a trace store, and the
+remaining six frameworks and eight canonical traces from
+[BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md). Not in scope at all: a hosted
+service or a new general-purpose agent runner.
 
 ### Stage 5: Extract only what proved portable
 
