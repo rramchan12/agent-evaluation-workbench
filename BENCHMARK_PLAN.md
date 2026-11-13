@@ -2,6 +2,7 @@
 
 **Status:** Planned  
 **Based on:** [Framework Capability Discovery](./CAPABILITY_DISCOVERY.md)  
+**Feeds into:** [ARCHITECTURE.md §8, Stage 4](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)  
 **Targets:** Microsoft Agent Framework, Google ADK, LangGraph, LangSmith,
 Inspect AI, Pydantic Evals, and Promptfoo
 

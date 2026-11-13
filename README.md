@@ -117,6 +117,13 @@ built to fill.
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — the system design that acts on that
   niche: the system-under-test boundary, the canonical requirement/evidence
   model, the Inspect AI integration, and the staged delivery roadmap.
+- [CAPABILITY_DISCOVERY.md](./CAPABILITY_DISCOVERY.md) — a documentation-checked
+  comparison of seven candidate runtimes/evaluation libraries against this
+  project's requirement/evidence/judgment/reconciliation/release chain, feeding
+  Stage 4 ecosystem-integration decisions.
+- [BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md) — the planned, trace-driven
+  benchmark that will validate those Stage 4 framework-adoption decisions with
+  evidence (discovery done, benchmark execution not yet started).
 
 ## Layout
 
