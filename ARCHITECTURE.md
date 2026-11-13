@@ -523,6 +523,21 @@ Not yet started. Goal: let the harness consume evidence that other systems
 already produce, without changing the core contracts (§9 rule 1, "reuse
 before rebuilding"). Proposed scope, in priority order:
 
+Before committing to specific adapters, [CAPABILITY_DISCOVERY.md](./CAPABILITY_DISCOVERY.md)
+sourced a documentation-checked comparison of seven candidate runtimes and
+evaluation libraries (Microsoft Agent Framework, Google ADK, LangGraph,
+LangSmith, Inspect AI, Pydantic Evals, Promptfoo) against this project's
+requirement → evidence → judgment → reconciliation → release chain. Its
+finding: stored-run replay without re-execution is already common across the
+field (Inspect AI, LangSmith, MAF), but cross-evaluator reconciliation,
+disagreement handling, and abstention are uniformly custom or unverified —
+confirming that layer, not the runner, is this project's point of
+differentiation (see IDEATION.md §5). [BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md)
+turns that discovery into a planned, trace-driven comparison (ten canonical
+traces, `T1`-`T10`) to validate framework-adoption decisions for this stage
+with evidence rather than assumption. Status of that plan: discovery done,
+benchmark execution not yet started.
+
 1. **OpenTelemetry / OpenInference trace import** — a new
    `trace/import_otel.py` normalizing OTLP/OpenInference GenAI spans into
    the existing `Trajectory`, alongside `inspect_adapter.py` and
@@ -541,7 +556,9 @@ agent runner, or more than one store adapter.
 
 ### Stage 5: Extract only what proved portable
 
-Not yet started — too early to decide; only two scenarios exist so far. Revisit after Stage 4 and\na third scenario; candidates are the Judgment/Evidence schemas and the\nevaluator interface.
+Not yet started — too early to decide; only two scenarios exist so far. Revisit
+after Stage 4 and a third scenario; candidates are the Judgment/Evidence
+schemas and the evaluator interface.
 
 ---
 

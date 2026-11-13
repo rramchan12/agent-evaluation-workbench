@@ -5,7 +5,9 @@
 Inspect AI, Pydantic Evals, and Promptfoo  
 **Method:** Claims were checked against official documentation and canonical
 repositories. A missing documented capability is recorded as unknown or custom,
-not as proof that the capability cannot exist.
+not as proof that the capability cannot exist.  
+**Feeds into:** [ARCHITECTURE.md §8, Stage 4](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)
+and [BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md).
 
 ## Classification
 
