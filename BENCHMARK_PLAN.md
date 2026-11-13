@@ -1,6 +1,8 @@
 # Framework Benchmark Plan
 
-**Status:** Planned  
+**Status:** Planned; a scoped first slice (one framework, one adapter, one
+trace pair) is underway as Stage 4's near-term work — see [ARCHITECTURE.md
+§8, Stage 4](./ARCHITECTURE.md#stage-4-ecosystem-integration--next).  
 **Based on:** [Framework Capability Discovery](./CAPABILITY_DISCOVERY.md)  
 **Feeds into:** [ARCHITECTURE.md §8, Stage 4](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)  
 **Targets:** Microsoft Agent Framework, Google ADK, LangGraph, LangSmith,
