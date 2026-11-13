@@ -6,4 +6,5 @@ __pycache__/
 inspect-logs/
 inspect-cli-logs/
 inspect-smoke-logs/
+out/
 *.sqlite3
