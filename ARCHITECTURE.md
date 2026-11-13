@@ -98,7 +98,7 @@ flowchart LR
             TOOLS["Tools · Workspace · Fixtures"]
         end
 
-        INSPECT["Inspect AI<br/>Execution · Sandbox · Trace Capture"]
+        INSPECT["Agent Runtime<br/>Execution · Sandbox · Trace Capture<br/>(Inspect AI today)"]
 
         EVALUATE["Evaluation Extension<br/>Evidence Selection · Evaluators · Reconciliation"]
 
@@ -129,7 +129,7 @@ flowchart LR
 The run has six steps:
 
 1. A scenario declares the task, requirements, and controlled fixtures.
-2. Inspect AI invokes the system under test, which acts against the controlled test environment's tools and workspace.
+2. The agent runtime (Inspect AI today) invokes the system under test, which acts against the controlled test environment's tools and workspace.
 3. The execution produces a trace, artifacts, and native scorer results.
 4. The evaluation extension maps that evidence to individual requirements.
 5. Evaluators independently judge those requirements.
@@ -156,13 +156,14 @@ A final-output check misses these cases because the evidence is in the trajector
 
 ### 2.2 We will reuse the execution stack
 
-The execution, tracing, and metric layers already exist:
-
-- Inspect AI provides task execution, agents, tools, sandboxes, approvals, scorers, logs, and repetitions.
-- Harbor and domain harnesses provide specialized coding, terminal, browser, desktop, and tool-use environments.
-- OpenTelemetry and OpenInference provide trace conventions and interoperability.
-- Pydantic Evals, DeepEval, Azure AI Evaluation, and similar libraries provide evaluator implementations.
-- Phoenix, MLflow, and Langfuse provide trace exploration and experiment management.
+The execution, tracing, and metric layers already exist. Inspect AI provides
+task execution, agents, tools, sandboxes, approvals, scorers, logs, and
+repetitions; Harbor and domain harnesses provide specialized coding,
+terminal, browser, desktop, and tool-use environments; OpenTelemetry and
+OpenInference provide trace conventions and interoperability; Pydantic
+Evals, DeepEval, Azure AI Evaluation, and similar libraries provide evaluator
+implementations; and Phoenix, MLflow, and Langfuse provide trace exploration
+and experiment management.
 
 We will use these components instead of rebuilding them.
 
@@ -259,47 +260,35 @@ An explicit policy converts requirement verdicts into a release decision. Qualit
 
 ### 4.1 System under test
 
-The system under test is the complete agent configuration being evaluated:
-
-- agent runtime and orchestration;
-- selected model;
-- system and developer prompts;
-- agent configuration;
-- memory and planning behavior;
-- tool-selection behavior;
-- tool or MCP client;
-- final-response behavior.
-
-Changing any of these creates a new system-under-test version, even when the external inputs and outputs stay the same. Section 10 tracks the remaining decision about version granularity, such as whether prompt whitespace changes warrant a new identity.
+The system under test is the complete agent configuration being evaluated.
+It includes the agent runtime and orchestration, the selected model, the
+system and developer prompts, the agent's own configuration, its memory and
+planning behavior, its tool-selection behavior, its tool or MCP client, and
+its final-response behavior. Changing any of these creates a new
+system-under-test version, even when the external inputs and outputs stay
+the same. Section 10 tracks the remaining decision about version
+granularity, such as whether a prompt whitespace change warrants a new
+identity.
 
 ### 4.2 Controlled test environment
 
-The test environment is outside the system under test. It includes:
-
-- tools and MCP servers;
-- synthetic workspaces or applications;
-- fixture data;
-- sandbox configuration;
-- injected failures;
-- reference state;
-- validation mechanisms.
-
-We version and reset the environment so runs remain comparable.
+The test environment sits outside the system under test. It includes the
+tools and MCP servers the agent can call, the synthetic workspaces or
+applications it operates on, the fixture data those workspaces start from,
+the sandbox configuration, any injected failures, the reference state used
+to judge correctness, and the validation mechanisms available to the agent.
+We version and reset this environment between runs so that runs remain
+comparable to one another.
 
 ### 4.3 Evaluation system
 
-The evaluation system is also outside the system under test. It includes:
-
-- scenario and requirement definitions;
-- execution control;
-- trace capture;
-- evidence selection;
-- deterministic and semantic evaluators;
-- reconciliation;
-- release policy;
-- report generation.
-
-A judge model is a measuring instrument, not part of the system under test. We record its identity, prompt, rubric, evidence window, and version.
+The evaluation system is also outside the system under test. It covers the
+scenario and requirement definitions, execution control, trace capture,
+evidence selection, the deterministic and semantic evaluators, reconciliation,
+release policy, and report generation. A judge model used inside this system
+is a measuring instrument, not part of the system under test — we record its
+identity, prompt, rubric, evidence window, and version just as we would for
+any other evaluator.
 
 ---
 
@@ -307,142 +296,134 @@ A judge model is a measuring instrument, not part of the system under test. We r
 
 ### 5.1 Scenario definition
 
-A scenario declares:
+A scenario declares the user task, the controlled inputs and fixtures the
+agent will see, the tools available to it, the initial environment state,
+a hierarchy of requirements, the evaluators assigned to each requirement, and
+the release policy that turns requirement verdicts into a release decision.
 
-- the user task;
-- controlled inputs and fixtures;
-- available tools;
-- initial environment state;
-- hierarchical requirements;
-- assigned evaluators;
-- release policy.
+The first scenario is a controlled-workspace decision brief: the agent
+inspects approved source material, compares fictional products, writes a
+report, cites its evidence, and validates the final artifact.
 
-The first scenario is a controlled-workspace decision brief. The agent inspects approved source material, compares fictional products, creates a report, cites evidence, and validates the final artifact.
+### 5.2 Execution through an agent runtime
 
-### 5.2 Execution through Inspect AI
+An agent runtime executes the scenario on the harness's behalf. It invokes
+the agent and model, exposes tools, manages the sandbox, applies execution
+limits and approvals, records messages, tool activity, and errors, runs its
+own native scorers if it has them, supports repeated trials, and produces an
+execution log that the harness can later normalize into evidence.
 
-Inspect AI runs the first implementation.
-
-It is responsible for:
-
-- invoking the agent and model;
-- exposing tools;
-- managing the sandbox;
-- applying execution limits and approvals;
-- recording messages, tool activity, and errors;
-- running native scorers;
-- supporting repeated trials;
-- producing the evaluation log.
-
-We start with an Inspect extension. If an extension point is missing, we contribute a focused upstream patch. We fork only when a required capability cannot be built through stable public APIs.
+The first runtime this project integrates with is Inspect AI, through a
+dedicated adapter (`trace/inspect_adapter.py`). We start with an Inspect
+extension rather than a fork: if an extension point is missing, we
+contribute a focused upstream patch, and we fork only when a required
+capability cannot be built through stable public APIs. Nothing in this
+section is specific to Inspect AI by design — §6 and §8's Stage 4 describe
+how a second runtime, such as the Microsoft Agent Framework, is meant to
+plug into the same adapter boundary without changing how the rest of the
+harness works.
 
 ### 5.3 Trace and artifact capture
 
-The trace records the observable execution:
+The trace records the observable execution: the run and scenario identity,
+the ordered agent messages, every tool call with its arguments, results, and
+errors, artifact reads and writes, relevant state changes, validation
+activity, the final response, and the model, prompt, tool, and environment
+versions in effect. The harness does not need hidden chain-of-thought; it
+evaluates observable actions, results, artifacts, and exposed messages only.
 
-- run and scenario identity;
-- ordered agent messages;
-- tool calls, arguments, results, and errors;
-- artifact reads and writes;
-- relevant state changes;
-- validation activity;
-- final response;
-- model, prompt, tool, and environment versions.
-
-The harness does not need hidden chain-of-thought. It evaluates observable actions, results, artifacts, and exposed messages.
-
-Trace events are:
-
-- ordered and correlated;
-- versioned;
-- immutable or tamper-evident;
-- redactable;
-- addressable by evaluators;
-- explicit about missing or dropped data.
-
-OpenTelemetry GenAI and OpenInference provide the trace vocabulary. The harness adds requirement IDs, evidence links, evaluator provenance, and release decisions.
+Trace events are ordered and correlated, versioned, immutable or
+tamper-evident, redactable, addressable by evaluators, and explicit about
+any data that is missing or was dropped. OpenTelemetry GenAI and
+OpenInference provide the trace vocabulary this project builds on; the
+harness adds requirement IDs, evidence links, evaluator provenance, and
+release decisions on top of that shared vocabulary.
 
 ### 5.4 Evidence selection
 
-We do not send the full trace to every evaluator.
-
-For each requirement, the harness selects a focused evidence bundle. For example:
-
-```text
-Requirement
-  Validate the report after its final write
-
-Selected evidence
-  - all report write events
-  - all report validation events
-  - relevant artifact versions
-```
-
-Focused evidence bundles reduce irrelevant context, make semantic checks easier to reproduce, and show reviewers exactly what the evaluator saw.
+The harness does not send the full trace to every evaluator. For each
+requirement, it selects a focused evidence bundle instead. For a
+requirement such as "validate the report after its final write," that
+bundle would contain every report write event, every report validation
+event, and the relevant artifact versions — nothing else. Focused evidence
+bundles reduce irrelevant context, make semantic checks easier to
+reproduce, and show reviewers exactly what the evaluator saw when it
+reached its verdict.
 
 ### 5.5 Evaluation
 
-Assigned evaluators inspect the evidence bundle.
-
-Examples:
-
-- a temporal evaluator compares the final write and validation order;
-- a policy evaluator checks whether every source read was approved;
-- a citation evaluator checks whether cited sections exist and were observed;
-- a semantic judge assesses whether a recommendation is supported.
-
-Each evaluator returns a verdict, explanation, evidence links, and confidence when that value has a defined meaning. Section 10 tracks confidence semantics as an open design decision. Until that is resolved, the harness does not compare confidence values from different evaluator types.
+Assigned evaluators inspect their evidence bundle and each reach an
+independent verdict. A temporal evaluator might compare the order of the
+final write and its validation; a policy evaluator might check whether
+every source read was approved; a citation evaluator might check whether
+cited sections exist and were actually observed in the trace; a semantic
+judge might assess whether a recommendation is actually supported by the
+evidence. Each evaluator returns a verdict, an explanation, links to the
+evidence it used, and a confidence value when that value has a defined
+meaning. Section 10 tracks confidence semantics as an open design decision;
+until that is resolved, the harness does not compare confidence values
+across different evaluator types.
 
 ### 5.6 Reconciliation
 
-The reconciliation layer stores every evaluator result and applies the strategy declared by the requirement.
-
-The first rules are:
-
-- deterministic facts take precedence when they fully cover the requirement;
-- verified blocker violations cannot be offset by quality scores;
-- semantic disagreement is visible;
-- low confidence or disagreement may require human review;
-- incomplete evidence causes abstention.
+The reconciliation layer stores every evaluator's result and applies the
+strategy declared by the requirement. In the first version of these rules,
+deterministic facts take precedence whenever they fully cover the
+requirement, a verified blocker violation can never be offset by a high
+quality score, semantic disagreement stays visible rather than being
+averaged away, low confidence or unresolved disagreement may route the
+requirement to human review, and incomplete evidence causes the harness to
+abstain rather than guess.
 
 ### 5.7 Reporting
 
-The output is a requirement-oriented evidence report with:
-
-- system and scenario identity;
-- overall release decision;
-- verdict for each requirement;
-- evaluator judgments;
-- disagreements and reconciliation;
-- evidence references;
-- missing evidence;
-- execution and evaluator provenance.
-
-Inspect's viewer remains the execution view. The extension produces portable JSON and a static report for requirement and release evidence.
+The output is a requirement-oriented evidence report. It carries the system
+and scenario identity, the overall release decision, a verdict for every
+requirement, every evaluator's individual judgment, any disagreements and
+how reconciliation resolved them, references to the supporting evidence, a
+record of any evidence that was missing, and execution and evaluator
+provenance. The agent runtime's own viewer, where it has one, remains the
+place to inspect raw execution; this harness produces a separate, portable
+JSON and static report whose subject is requirement and release evidence,
+not raw execution.
 
 ---
 
-## 6. Responsibility split with Inspect AI
+## 6. Responsibility split between the harness and the agent runtime
+
+The table below is written for Inspect AI because that is the runtime
+integrated today, but the split itself is a general contract: an agent
+runtime owns execution and the raw evaluation record, and the harness owns
+everything built on top of that record. Any runtime that honors this split
+— producing a normalized trace the harness can read — should be able to
+take Inspect AI's place in the left-hand column without any change to the
+right-hand column.
 
 | Capability | Owner | Note |
 |---|---|---|
-| Task and dataset execution | Inspect AI | Evaluation extension configures scenario parameters |
-| Agent and model invocation | Inspect AI | — |
-| Tool and sandbox mechanism | Inspect AI | Evaluation extension defines scenario-specific tool content |
-| Limits and approvals | Inspect AI | Evaluation extension consumes as evidence |
-| Execution log | Inspect AI | Evaluation extension normalizes and references |
-| Native scorers | Inspect AI | Evaluation extension consumes results |
+| Task and dataset execution | Agent runtime (Inspect AI today) | Evaluation extension configures scenario parameters |
+| Agent and model invocation | Agent runtime (Inspect AI today) | — |
+| Tool and sandbox mechanism | Agent runtime (Inspect AI today) | Evaluation extension defines scenario-specific tool content |
+| Limits and approvals | Agent runtime (Inspect AI today) | Evaluation extension consumes as evidence |
+| Execution log | Agent runtime (Inspect AI today) | Evaluation extension normalizes and references |
+| Native scorers | Agent runtime (Inspect AI today) | Evaluation extension consumes results |
 | Hierarchical requirements | Evaluation extension | — |
 | Requirement evidence selection | Evaluation extension | — |
-| Temporal and policy evaluation | Evaluation extension | Inspect AI approvals provide partial coverage |
-| Semantic judge integration | Evaluation extension | Inspect AI supports the underlying model invocation |
+| Temporal and policy evaluation | Evaluation extension | Inspect AI approvals provide partial coverage today |
+| Semantic judge integration | Evaluation extension | Agent runtime supports the underlying model invocation |
 | Judgment reconciliation | Evaluation extension | — |
 | Release decision | Evaluation extension | — |
 | Requirement evidence report | Evaluation extension | — |
 
-The ownership boundary is:
-
-> Inspect AI owns execution and raw evaluation records. The evaluation extension owns requirement evidence, judgment reconciliation, and release decisions.
+The ownership boundary is: the agent runtime owns execution and raw
+evaluation records; the evaluation extension owns requirement evidence,
+judgment reconciliation, and release decisions. [CAPABILITY_DISCOVERY.md](./CAPABILITY_DISCOVERY.md)
+checked how close seven candidate runtimes and evaluation libraries come to
+owning that same right-hand column natively; the comparison table is
+reproduced in [README.md](./README.md#how-this-compares). None of them do,
+and all seven are weakest at the same place: reconciling disagreement and
+abstaining on missing evidence, which is exactly the boundary this section
+draws.
 
 ---
 

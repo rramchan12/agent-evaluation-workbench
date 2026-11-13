@@ -204,6 +204,14 @@ We compared the existing approaches against six capabilities needed for requirem
 
 We did not find one project that implements all six as a single contract. That claim is limited to the sources and versions checked on 2026-09-12; we will verify it again before publishing.
 
+[CAPABILITY_DISCOVERY.md](./CAPABILITY_DISCOVERY.md) repeats this same
+exercise later, after the harness existed, against seven concrete runtimes
+and evaluation libraries rather than research categories. It reaches the
+same conclusion from a different angle: none of them implements the full
+requirement-to-release chain natively, and every one is weakest at
+preserving disagreement and abstaining on missing evidence — the two rows
+this table calls out as largely unaddressed.
+
 ---
 
 ## 6. What we are building
@@ -212,12 +220,18 @@ We did not find one project that implements all six as a single contract. That c
 
 The missing piece is not another benchmark or metric. It is the layer that connects requirements, traces, judgments, and release policy:
 
-```text
-declared requirement
-    -> relevant trajectory evidence
-    -> independent evaluator judgments
-    -> reconciled verdict (with disagreement preserved)
-    -> auditable release decision
+```mermaid
+flowchart LR
+    REQ["Declared<br/>requirement"] --> EVID["Relevant<br/>trajectory evidence"]
+    EVID --> JUDGE["Independent<br/>evaluator judgments"]
+    JUDGE --> RECON["Reconciled verdict<br/>(disagreement preserved)"]
+    RECON --> RELEASE["Auditable<br/>release decision"]
+
+    style REQ fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0c4a6e
+    style EVID fill:#fff7ed,stroke:#ea580c,stroke-width:2px,color:#7c2d12
+    style JUDGE fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#3b0764
+    style RECON fill:#f3e8ff,stroke:#9333ea,stroke-width:2px,color:#3b0764
+    style RELEASE fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#450a0a
 ```
 
 The harness answers one question:
