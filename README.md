@@ -14,7 +14,7 @@ scenario, a recorded-trace path for the `coding-agent-bugfix` scenario, judge
 calibration and human-review CLI commands, a CLI (`agent-eval run` /
 `agent-eval evaluate` / `agent-eval review` / `agent-eval calibrate`), a
 Streamlit GUI for the run/replay flows, and a unit + integration test suite
-(83 tests, all passing).
+(85 tests, all passing).
 
 This is an early (v0.1) release: some checks are intentionally simple (for
 example, required inspection is presence-only, with no ordering evaluator
@@ -28,7 +28,7 @@ Licensed under the [MIT License](./LICENSE); cite via [CITATION.cff](./CITATION.
 
 ```powershell
 pip install -e .
-python -m pytest -q                        # 83 unit + integration tests
+python -m pytest -q                        # 85 unit + integration tests
 
 # Live Inspect AI run against the decision-brief scenario, then evaluate
 agent-eval run `

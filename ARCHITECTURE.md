@@ -2,7 +2,7 @@
 
 ## Architecture
 
-**Status:** Working architecture — Stages 1-3 implemented  
+**Status:** Working architecture — Stages 1-3 implemented; Stage 4 next  
 **Audience:** Contributors building or reviewing the harness  
 **Purpose:** Define the system boundary, component ownership, delivery stages, and success criteria  
 
@@ -54,7 +54,7 @@ What exists today, concretely:
   original framing of human review as a first-class evaluator kind.
   Reconciliation treats a `human` judgment as taking precedence over
   every other rule, including the incomplete-trajectory abstention rule.
-- 83 unit + integration tests cover the core, the evaluators, both
+- 85 unit + integration tests cover the core, the evaluators, both
   scenarios, and the Stage 3 judge/calibration/review additions end to
   end.
 
@@ -517,13 +517,31 @@ tests/calibration and `min_confidence` abstention), judge calibration
 persisted `Report` rather than as a scenario-declared evaluator
 assignment — see §0).
 
-### Stage 4: Ecosystem integration
+### Stage 4: Ecosystem integration — next
 
-Not yet started.
+Not yet started. Goal: let the harness consume evidence that other systems
+already produce, without changing the core contracts (§9 rule 1, "reuse
+before rebuilding"). Proposed scope, in priority order:
+
+1. **OpenTelemetry / OpenInference trace import** — a new
+   `trace/import_otel.py` normalizing OTLP/OpenInference GenAI spans into
+   the existing `Trajectory`, alongside `inspect_adapter.py` and
+   `import_recorded.py`. `agent-eval evaluate` auto-detects it.
+2. **Trace-store adapters** — read-only import from one of Langfuse,
+   Phoenix, or MLflow (pick one first; chosen by the first real user).
+3. **CI gate** — a documented `agent-eval` invocation and exit-code
+   contract so the release decision can fail a pipeline.
+4. **Publish results back** — export requirement-level verdicts as
+   evaluation scores/annotations to the chosen trace store.
+
+Exit criterion: one trace captured outside this repo is evaluated, replayed,
+and reported with the same requirement/evidence/release contracts, with no
+changes to `core/` or `evaluators/`. Not in scope: a hosted service, a new
+agent runner, or more than one store adapter.
 
 ### Stage 5: Extract only what proved portable
 
-Not yet started — too early to decide; only two scenarios exist so far.
+Not yet started — too early to decide; only two scenarios exist so far. Revisit after Stage 4 and\na third scenario; candidates are the Judgment/Evidence schemas and the\nevaluator interface.
 
 ---
 
