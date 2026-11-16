@@ -1,6 +1,6 @@
 # Runtime adapters
 
-Runtime adapters translate execution records from agent runtimes and external
+The harness never runs an agent: every trace enters through an adapter. Runtime adapters translate execution records from agent runtimes and external
 trace formats into the harness's canonical
 [`Trajectory`](../../src/agent_eval/trace/model.py). The evaluation core only
 consumes that canonical representation; it does not depend on Inspect AI,
@@ -23,7 +23,7 @@ missing events.
 
 | Source | Adapter | Status |
 |---|---|---|
-| Inspect AI eval log | `trace/inspect_adapter.py` | Implemented |
+| Inspect AI eval log | `trace/inspect_adapter.py` | Removed; candidate future adapter |
 | Recorded step-list JSON | `trace/import_recorded.py` | Implemented |
 | Microsoft Agent Framework trace | `trace/import_maf.py` | Planned Stage 4 integration |
 

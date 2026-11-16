@@ -122,7 +122,7 @@ logs) plug in through its own trace adapter without any change to `core/` or `ev
 4](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)).
 
 The authoritative runtime-adapter contract, supported sources, and integration
-guides live under [`docs/adapters/`](./docs/adapters/index.md). Runtime-specific
+guides live under [`docs/adapters/`](./docs/adapters/README.md). Runtime-specific
 projects may generate traces elsewhere while the workbench retains the
 canonical trajectory schema and importer conformance tests.
 
@@ -199,7 +199,7 @@ as a new runtime itself.
   pair, one new trace adapter — see [ARCHITECTURE.md
   §8](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)) is a smaller,
   concrete first slice of this larger plan, not a replacement for it.
-- [`docs/adapters/`](./docs/adapters/index.md) — the canonical adapter
+- [`docs/adapters/`](./docs/adapters/README.md) — the canonical adapter
   boundary, authoring contract, and source-specific integration guides.
 
 ## Layout

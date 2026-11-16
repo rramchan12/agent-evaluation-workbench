@@ -321,15 +321,14 @@ limits and approvals, records messages, tool activity, and errors, runs its
 own native scorers if it has them, supports repeated trials, and produces an
 execution log that the harness later ingests, through an adapter, and normalizes into evidence.
 
-The first runtime this project integrates with is Inspect AI, through a
-dedicated adapter (`trace/inspect_adapter.py`). We start with an Inspect
-extension rather than a fork: if an extension point is missing, we
-contribute a focused upstream patch, and we fork only when a required
-capability cannot be built through stable public APIs. Nothing in this
-section is specific to Inspect AI by design. The authoritative adapter
-contract is documented in [`docs/adapters/`](./docs/adapters/index.md); §6
-and §8's Stage 4 describe how a second runtime plugs into that boundary
-without changing the rest of the harness.
+The first runtime this project was built against was Inspect AI, through an
+adapter that has since been removed (see §0); today traces come from recorded
+files ingested by `trace/import_recorded.py`, and the harness never runs an
+agent itself. Nothing in this section is specific to any one runtime. The
+authoritative adapter contract is documented in
+[`docs/adapters/`](./docs/adapters/README.md); §6 and §8's Stage 4 describe how
+an external runtime such as the Microsoft Agent Framework plugs into that
+boundary without changing the rest of the harness.
 
 ### 5.3 Trace and artifact capture
 
@@ -532,8 +531,7 @@ that gap with one concrete, evaluated example before attempting the larger
 
 1. **Microsoft Agent Framework (MAF) trace import** — a new
    `trace/import_maf.py` normalizing a MAF run's native trace/messages into
-   the existing `Trajectory`, alongside `inspect_adapter.py` and
-   `import_recorded.py`. `agent-eval evaluate` auto-detects it. The runnable
+   the existing `Trajectory`, alongside `import_recorded.py`. `agent-eval evaluate` auto-detects it. The runnable
    MAF agent and OpenTelemetry capture experiments live in the separate
    [`maf-evaluation-pilot`](https://github.com/rramchan12/maf-evaluation-pilot)
    repository, keeping MAF dependencies out of this workbench. The importer,
