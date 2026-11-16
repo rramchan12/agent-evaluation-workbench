@@ -173,8 +173,12 @@ Sources:
 
 ## Discovery conclusions
 
+These frameworks are compared as trace sources: this harness does not run
+them, it ingests their traces through adapters.
+
+
 1. Inspect AI is the strongest fully local evaluation-runtime baseline in this
-   set.
+   set, and its logs are a candidate trace source for this harness.
 2. MAF and ADK are important vendor-runtime comparisons with native evaluation
    support but different hosted-service boundaries.
 3. LangGraph and LangSmith must be measured separately: one is the runtime and

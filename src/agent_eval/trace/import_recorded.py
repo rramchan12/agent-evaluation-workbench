@@ -1,10 +1,11 @@
 """Imports a hand-authored or externally recorded trace into a ``Trajectory``.
 
-This is the path used for scenarios that do not run through Inspect AI at
-all (Stage 2's coding-agent trace). The input is plain JSON: a flat,
+The generic trace adapter: it covers hand-authored and externally recorded
+traces (the coding-agent and decision-brief fixtures under ``traces/``). The
+harness never runs the agent that produced a trace. The input is plain JSON: a flat,
 ordered list of steps. This importer assigns sequential event ids
-(``e0``, ``e1``, ...) exactly as ``inspect_adapter.py`` does, so evidence
-selectors and evaluators cannot tell which source produced a trajectory.
+(``e0``, ``e1``, ...) so that evidence selectors and evaluators cannot tell which adapter produced a
+trajectory.
 
 Recorded-trace JSON shape::
 

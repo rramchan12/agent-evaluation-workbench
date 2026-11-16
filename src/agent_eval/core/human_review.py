@@ -6,7 +6,7 @@ and the harness's answer to §10's "confidence semantics" question: a human
 decision is recorded as an ordinary ``Judgment`` (``kind="human"``) and
 always wins reconciliation (see ``core/reconciliation.py``).
 
-This module never calls a model and never touches Inspect AI. It only
+This module never calls a model and never touches an agent. It only
 takes a ``Report`` the engine already produced, lets something outside the
 harness (a person, today) attach a ``HumanDecision`` per flagged
 requirement, and reruns reconciliation + release with that decision folded

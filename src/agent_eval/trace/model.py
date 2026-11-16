@@ -1,10 +1,9 @@
 """Normalized trace model shared by every other layer in this package.
 
 ``Event`` and ``Trajectory`` are the one shape that ``core/`` and
-``evaluators/`` understand. They know nothing about Inspect AI; this module
-itself has no Inspect AI dependency either, so trajectories produced here can
-come from a live Inspect run (``trace/inspect_adapter.py``), a hand-authored
-recorded trace (``trace/import_recorded.py``), or any future importer.
+``evaluators/`` understand. They know nothing about how a trajectory was produced, so trajectories can
+come from a hand-authored recorded trace (``trace/import_recorded.py``) or any
+future adapter for an external runtime's native log.
 """
 
 from __future__ import annotations

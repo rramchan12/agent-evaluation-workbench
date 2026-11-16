@@ -12,11 +12,9 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
-from agent_eval.gui.background import start_live_run
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-RUN_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "1_run.py"
-REPLAY_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "2_replay.py"
+REPLAY_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "1_replay.py"
 
 
 def _markdown_text(at: AppTest) -> list[str]:
@@ -74,61 +72,37 @@ def test_replay_without_a_selected_trace_shows_readable_error():
 
 
 # ---------------------------------------------------------------------------
-# Run page
+# Replay page: recorded decision-brief traces
 # ---------------------------------------------------------------------------
 
 
-def test_run_happy_path_candidate_2_passes():
-    at = AppTest.from_file(str(RUN_PAGE), default_timeout=60).run()
-    at.selectbox[1].set_value("candidate-2").run()
+def test_replay_decision_brief_valid_process_trace_passes():
+    at = AppTest.from_file(str(REPLAY_PAGE), default_timeout=30).run()
+    at.selectbox[0].set_value("Controlled Workspace Decision Brief").run()
+    at.selectbox[1].set_value("decision-brief-candidate-2").run()
     at.button[0].click().run()
 
     assert not at.exception
     assert not at.error
-    md = _markdown_text(at)
-    assert any(">PASS<" in text for text in md)
+    assert any(">PASS<" in text for text in _markdown_text(at))
 
 
-def test_run_candidate_1_renders_without_crashing():
-    at = AppTest.from_file(str(RUN_PAGE), default_timeout=60).run()
+def test_replay_decision_brief_invalid_process_trace_fails():
+    at = AppTest.from_file(str(REPLAY_PAGE), default_timeout=30).run()
+    at.selectbox[0].set_value("Controlled Workspace Decision Brief").run()
+    at.selectbox[1].set_value("decision-brief-candidate-1").run()
     at.button[0].click().run()
 
     assert not at.exception
-    assert not at.error
-
-
-def test_run_task_error_surfaces_as_error_stage_not_a_crash():
-    """The Run page only offers discovered, real candidate files, so a
-    "deliberately broken candidate path" cannot be selected through the
-    widget tree. Exercise the same ``background.start_live_run`` the page
-    calls directly, pointed at a nonexistent candidate path, and confirm
-    the background thread reports a readable error instead of raising."""
-    scenario_path = (
-        REPO_ROOT / "scenarios" / "controlled-workspace-decision-brief" / "scenario.json"
-    )
-    thread, progress_queue = start_live_run(
-        scenario_path=scenario_path,
-        task_factory_dotted="agent_eval.tasks.decision_brief:decision_brief",
-        candidate_path=REPO_ROOT / "scenarios" / "controlled-workspace-decision-brief"
-        / "candidates" / "does-not-exist.json",
-    )
-    thread.join(timeout=30)
-
-    last = None
-    while not progress_queue.empty():
-        last = progress_queue.get_nowait()
-
-    assert last is not None
-    assert last.stage == "error"
-    assert last.error
+    assert any(">FAIL<" in text for text in _markdown_text(at))
 
 
 # ---------------------------------------------------------------------------
 # Review and Calibration pages (Stage 3)
 # ---------------------------------------------------------------------------
 
-REVIEW_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "3_review.py"
-CALIBRATION_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "4_calibration.py"
+REVIEW_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "2_review.py"
+CALIBRATION_PAGE = REPO_ROOT / "src" / "agent_eval" / "gui" / "pages" / "3_calibration.py"
 
 
 def test_review_page_applies_human_decision_and_recomputes_release():

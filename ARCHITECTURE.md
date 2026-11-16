@@ -17,29 +17,37 @@ What exists today, concretely:
 
 - `src/agent_eval/core/` + `src/agent_eval/evaluators/` implement the
   framework-agnostic requirement/evidence/evaluator/reconciliation/release
-  layer described in §3, §6, and §9 — no Inspect AI import anywhere in
-  these two packages.
-- `src/agent_eval/trace/` implements both Stage 1 and Stage 2 trace
-  ingestion: `inspect_adapter.py` normalizes a live Inspect AI eval log,
-  and `import_recorded.py` normalizes a hand-authored recorded trace with
-  no Inspect AI involved at all.
-- `src/agent_eval/tasks/decision_brief.py` is the Inspect `@task` for the
-  §7 reference scenario (`scenarios/controlled-workspace-decision-brief/`),
-  driven by a scripted mockllm so it runs deterministically in CI.
+  layer described in §3, §6, and §9 — no agent-framework import anywhere in
+  these two packages (or anywhere in `src/`; the project has zero runtime
+  dependencies).
+- `src/agent_eval/trace/` holds the `Event`/`Trajectory` model and
+  `import_recorded.py`, which normalizes a hand-authored recorded trace.
+- **The harness never runs an agent (design rule).** Agents run in their own
+  runtime; the harness only ingests the trace they leave behind through an
+  adapter in `trace/` and does all evaluation logic. The §7 reference scenario
+  (`scenarios/controlled-workspace-decision-brief/`) is evaluated from two
+  recorded traces, `traces/decision-brief-candidate-1.json` and `-2.json`.
+- **Inspect AI decoupling (done).** Stages 1-3 were first built on Inspect AI
+  (`inspect_adapter.py`, an Inspect `@task`, `mockllm`, and `get_model` in the
+  judge); an interim native runner (`tasks/`) then replaced it. Both were
+  removed: the judge uses the stdlib `model_client.py`, `inspect-ai` is no
+  longer a dependency, and the `run` command, runner and Run page are gone.
+  The trajectory contract is unchanged, so verdicts are unaffected. Inspect AI
+  logs remain a candidate trace source for Stage 4, via a future adapter.
 - `scenarios/coding-agent-bugfix/` is the Stage 2 recorded-trajectory
   scenario, proving the same core contracts (§6's ownership boundary)
-  apply unchanged to a non-Inspect trajectory.
-- `src/agent_eval/cli.py` provides `agent-eval run` (execute + evaluate)
-  and `agent-eval evaluate` (replay-only, §5.4/§9 rule 7), installed as a
-  console script.
+  apply unchanged to a second recorded trajectory.
+- `src/agent_eval/cli.py` provides `agent-eval evaluate` (trace in, report out,
+  §5.4/§9 rule 7), plus `review` and `calibrate`, installed as a console
+  script.
 - `src/agent_eval/reporting/render.py` produces the §5.7 JSON + static
   HTML evidence report.
 - `src/agent_eval/evaluators/semantic/real_judge.py` is the Stage 3 real
-  model judge (Inspect AI `get_model`/`Model.generate`), sharing the
+  model judge (stdlib `model_client.py`: scripted or OpenAI-compatible), sharing the
   `judge_interface.py` response contract (`PASS`/`FAIL`/
   `INSUFFICIENT_EVIDENCE` + explanation + optional confidence) with
   `fake_judge`. It supports a `mock_responses` test/calibration config
-  key (scripted raw judge responses via `mockllm`, never set in
+  key (scripted raw judge responses, never set in
   production scenario config) and a `min_confidence` abstention
   threshold.
 - `src/agent_eval/core/calibration.py` scores a judge against a
@@ -98,7 +106,7 @@ flowchart LR
             TOOLS["Tools · Workspace · Fixtures"]
         end
 
-        INSPECT["Agent Runtime<br/>Execution · Sandbox · Trace Capture<br/>(Inspect AI today)"]
+        INSPECT["Agent Runtime<br/>Execution · Sandbox · Trace Capture<br/>(external; not run by the harness)"]
 
         EVALUATE["Evaluation Extension<br/>Evidence Selection · Evaluators · Reconciliation"]
 
@@ -129,7 +137,7 @@ flowchart LR
 The run has six steps:
 
 1. A scenario declares the task, requirements, and controlled fixtures.
-2. The agent runtime (Inspect AI today) invokes the system under test, which acts against the controlled test environment's tools and workspace.
+2. The agent runtime (external to the harness) invokes the system under test, which acts against the controlled test environment's tools and workspace.
 3. The execution produces a trace, artifacts, and native scorer results.
 4. The evaluation extension maps that evidence to individual requirements.
 5. Evaluators independently judge those requirements.
@@ -313,12 +321,11 @@ limits and approvals, records messages, tool activity, and errors, runs its
 own native scorers if it has them, supports repeated trials, and produces an
 execution log that the harness can later normalize into evidence.
 
-The first runtime this project integrates with is Inspect AI, through a
-dedicated adapter (`trace/inspect_adapter.py`). We start with an Inspect
-extension rather than a fork: if an extension point is missing, we
-contribute a focused upstream patch, and we fork only when a required
-capability cannot be built through stable public APIs. Nothing in this
-section is specific to Inspect AI by design — §6 and §8's Stage 4 describe
+The first runtime this project integrated with was Inspect AI, through an
+adapter that has since been removed (see §0); today traces come from recorded
+files ingested by `trace/import_recorded.py`, and the harness never runs an
+agent itself. Nothing in this
+section is specific to any one runtime by design — §6 and §8's Stage 4 describe
 how a second runtime, such as the Microsoft Agent Framework, is meant to
 plug into the same adapter boundary without changing how the rest of the
 harness works.
@@ -391,22 +398,21 @@ not raw execution.
 
 ## 6. Responsibility split between the harness and the agent runtime
 
-The table below is written for Inspect AI because that is the runtime
-integrated today, but the split itself is a general contract: an agent
+The table below names an external agent runtime as the owner, but the split itself is a general contract: an agent
 runtime owns execution and the raw evaluation record, and the harness owns
 everything built on top of that record. Any runtime that honors this split
 — producing a normalized trace the harness can read — should be able to
-take Inspect AI's place in the left-hand column without any change to the
+take its place in the left-hand column without any change to the
 right-hand column.
 
 | Capability | Owner | Note |
 |---|---|---|
-| Task and dataset execution | Agent runtime (Inspect AI today) | Evaluation extension configures scenario parameters |
-| Agent and model invocation | Agent runtime (Inspect AI today) | — |
-| Tool and sandbox mechanism | Agent runtime (Inspect AI today) | Evaluation extension defines scenario-specific tool content |
-| Limits and approvals | Agent runtime (Inspect AI today) | Evaluation extension consumes as evidence |
-| Execution log | Agent runtime (Inspect AI today) | Evaluation extension normalizes and references |
-| Native scorers | Agent runtime (Inspect AI today) | Evaluation extension consumes results |
+| Task and dataset execution | Agent runtime (external) | Evaluation extension configures scenario parameters |
+| Agent and model invocation | Agent runtime (external) | — |
+| Tool and sandbox mechanism | Agent runtime (external) | Evaluation extension defines scenario-specific tool content |
+| Limits and approvals | Agent runtime (external) | Evaluation extension consumes as evidence |
+| Execution log | Agent runtime (external) | Evaluation extension normalizes and references |
+| Native scorers | Agent runtime (external) | Evaluation extension consumes results |
 | Hierarchical requirements | Evaluation extension | — |
 | Requirement evidence selection | Evaluation extension | — |
 | Temporal and policy evaluation | Evaluation extension | Inspect AI approvals provide partial coverage today |
@@ -467,10 +473,10 @@ The artifacts look equally good. The trajectory explains why only one is releasa
 
 ## 8. Build stages
 
-### Stage 0: Prove the Inspect extension points — done
+### Stage 0: Prove the Inspect extension points — done (since decoupled, see §0)
 
-Probed trace access, tool docstrings, attachment compaction, mockllm
-scripting, and `use_tools` wiring directly while building Stage 1 (see §0
+Historical: probed Inspect trace access, tool docstrings, attachment
+compaction, mockllm scripting, and `use_tools` wiring while building Stage 1 (see §0
 and each module README for the gotchas found; no missing public API was
 hit for this slice).
 
@@ -489,7 +495,7 @@ requirement, evidence, judgment, and release contracts unchanged.
 
 ### Stage 3: Real judges, calibration, and human review — done
 
-Implemented: `real_judge` (a real Inspect AI model judge sharing the
+Implemented: `real_judge` (a real model judge sharing the
 `fake_judge` response contract, with `mock_responses` for deterministic
 tests/calibration and `min_confidence` abstention), judge calibration
 (`core/calibration.py` + `agent-eval calibrate` against
@@ -500,7 +506,7 @@ assignment — see §0).
 
 ### Stage 4: Ecosystem integration — next
 
-Not yet started. Goal: prove the §0 Inspect-free boundary around `core/` and
+Not yet started. Goal: prove the §0 runtime-free boundary around `core/` and
 `evaluators/` is not just tidy layering but genuine portability — the
 requirement/evidence/judgment/reconciliation/release chain must evaluate a
 trajectory produced by a runtime this repo did not write, without changing
@@ -525,24 +531,23 @@ that gap with one concrete, evaluated example before attempting the larger
 
 1. **Microsoft Agent Framework (MAF) trace import** — a new
    `trace/import_maf.py` normalizing a MAF run's native trace/messages into
-   the existing `Trajectory`, alongside `inspect_adapter.py` and
-   `import_recorded.py`. `agent-eval evaluate` auto-detects it. The MAF
+   the existing `Trajectory`, alongside `import_recorded.py`. `agent-eval evaluate` auto-detects it. The MAF
    agent itself is a minimal, local `agent-framework-core` build (no
    Foundry dependency) reusing the controlled-workspace tool surface, run
-   with a scripted/deterministic chat client for the same reason
-   `decision_brief` uses `mockllm` — a reproducible CI artifact, not a
-   live-model demo.
+   with a scripted/deterministic chat client so the captured trace is a
+   reproducible CI artifact. The harness only ingests the captured trace; it
+   never runs the MAF agent.
 2. **Trace pair** — one valid-process run and one prohibited-source run
    (the MAF analogue of `candidate-1`/`candidate-2` and `BENCHMARK_PLAN.md`'s
    `T1`/`T2`), so the existing evaluators and reconciliation produce a PASS
-   and a FAIL from two runs that never touched Inspect AI.
+   and a FAIL from two runs from a runtime this repo did not write.
 3. **CI gate** — a documented `agent-eval` invocation and exit-code
    contract so the release decision can fail a pipeline, now demonstrated
-   against both an Inspect AI trace and a MAF trace.
+   against both a recorded decision-brief trace and a MAF trace.
 
 Exit criterion for this slice: the MAF-sourced trace pair is evaluated,
 replayed, and reported with the same requirement/evidence/release contracts
-used for the Inspect AI scenarios, with no changes to `core/` or
+used for the recorded decision-brief scenario, with no changes to `core/` or
 `evaluators/`.
 
 **Deferred to the full benchmark** (not in this stage's scope): a generic
@@ -609,11 +614,11 @@ Detailed design will not include:
 
 The first implementation is done when it can:
 
-1. ✅ run the controlled-workspace scenario through Inspect AI — `tasks/decision_brief.py`, exercised by `tests/integration/test_decision_brief_scenario.py`;
-2. ✅ record an evidence-addressable trajectory — `trace/model.py` + `trace/inspect_adapter.py`;
+1. ✅ evaluate the controlled-workspace scenario from recorded traces (`traces/decision-brief-candidate-*.json`) — exercised by `tests/integration/test_decision_brief_scenario.py`;
+2. ✅ record an evidence-addressable trajectory — `trace/model.py` + `trace/import_recorded.py`;
 3. ✅ evaluate four requirement kinds — `scenarios/controlled-workspace-decision-brief/scenario.json` declares one outcome, obligation, prohibition, and verification requirement;
 4. ✅ distinguish a good artifact produced through an invalid process from a valid run — candidate-1 (invalid process) → `FAIL`, candidate-2 (valid process) → `PASS`, both with comparably strong final artifacts;
-5. ✅ rerun evaluators without rerunning the agent — `agent-eval evaluate` / `core/engine.py` consuming a saved `Trajectory`, with no Inspect AI involved;
+5. ✅ rerun evaluators without rerunning the agent — `agent-eval evaluate` / `core/engine.py` consuming a saved `Trajectory`, with no agent involved;
 6. ✅ explain disagreement and deterministic precedence — `core/reconciliation.py`, unit-tested in `tests/unit/test_reconciliation_release.py`;
 7. ✅ produce an auditable requirement-level release decision — `core/release.py` + `reporting/render.py`;
 8. ✅ apply the same core contracts to one recorded coding-agent trajectory — `scenarios/coding-agent-bugfix/` + `trace/import_recorded.py`, exercised by `tests/integration/test_coding_bugfix_scenario.py`.

@@ -2,7 +2,7 @@
 
 The framework-agnostic layer — the project's actual distinctive
 contribution, per [ARCHITECTURE.md §6](../../../ARCHITECTURE.md). Nothing in
-here should need to know that Inspect AI exists; it operates purely on a
+here should need to know how a trajectory was produced; it operates purely on a
 normalized trajectory.
 
 Planned modules:
@@ -20,5 +20,5 @@ Planned modules:
 
 If a runtime-neutral kernel is ever extracted (Stage 5 in
 [ARCHITECTURE.md](../../../ARCHITECTURE.md)), this is the code that gets
-extracted — everything else in this package is Inspect-specific plumbing
+extracted — everything else in this package is trace-adapter plumbing
 around it.

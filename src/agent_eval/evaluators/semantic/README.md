@@ -25,17 +25,18 @@ Modules:
   reconciliation, release) be tested reproducibly before any real model
   judge is introduced.
 - `real_judge.py` — Stage 3: a real model judge, registered as the
-  `real_judge` semantic evaluator. Calls Inspect AI's `get_model(...)` and
-  `Model.generate(...)` (wrapped in `asyncio.run`, since no event loop is
-  running in the CLI/test callers) and parses the response through
+  `real_judge` semantic evaluator. Calls a stdlib-only model client
+  (`model_client.py`: `ScriptedModelClient` and an OpenAI-compatible HTTP
+  `OpenAICompatibleClient`) and parses the response through
   `judge_interface.parse_judge_response`. Config keys:
-  - `model` — the Inspect AI model identifier to use (see
-    `_resolve_model_name` for defaults/fallback).
+  - `model` — a `provider/model` name: `mock/...` (scripted, the default) or
+    `openai/<model>` (needs `OPENAI_API_KEY`; optional `OPENAI_BASE_URL`). Falls
+    back to `$AGENT_EVAL_JUDGE_MODEL` (see `_resolve_model_name`).
   - `min_confidence` — optional float; if the parsed confidence is below
     this threshold, the judge abstains (`INSUFFICIENT_EVIDENCE`) instead
     of returning its raw verdict.
   - `mock_responses` — a list of scripted raw JSON response strings,
-    consumed in order via Inspect AI's `mockllm` provider. This is the
+    consumed in order by the scripted client. This is the
     sanctioned way to get deterministic, no-API-key test and calibration
     runs; **it must never be set in a production scenario's evaluator
     config** — only in tests and `scenarios/judge-calibration/cases.json`.

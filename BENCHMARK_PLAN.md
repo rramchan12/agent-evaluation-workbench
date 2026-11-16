@@ -176,12 +176,16 @@ These are hypotheses from discovery, not benchmark results.
 1. Freeze the benchmark requirement set and normalized trace schema.
 2. Generate T1-T10 once through the existing framework-neutral simulator.
 3. Record expected requirement and release verdicts as benchmark ground truth.
-4. Implement Inspect AI recorded-log rescoring as the current baseline.
-5. Implement Pydantic Evals as the lightweight local comparison.
-6. Implement MAF and ADK native execution comparisons.
-7. Implement LangGraph execution and evaluate its traces through LangSmith as a
+4. Measure each framework's native capabilities (run outside this harness) as
+   the comparison baseline, starting with Inspect AI recorded-log rescoring.
+5. Measure Pydantic Evals as the lightweight local comparison.
+6. Measure MAF and ADK native evaluation of their own runs.
+7. Measure LangGraph runs and their evaluation through LangSmith as a
    separate layer.
-8. Implement Promptfoo as the declarative CI comparison.
+8. Measure Promptfoo as the declarative CI comparison.
+9. For every framework, ingest its trace through an adapter into this harness
+   and compare its verdicts with the ground truth. The harness never executes
+   the agents; frameworks are trace sources only.
 9. Run the fixed judgment and release-policy cases.
 10. Publish the evidence matrix, implementation-effort report, trace-loss
     report, and adoption decision.

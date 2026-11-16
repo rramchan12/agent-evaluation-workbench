@@ -2,8 +2,9 @@
 
 Recorded trajectories, used for evaluator-only replay — running the
 evaluation pipeline with zero agent execution. A trace here can come from
-any source: a live run's eval log, a hand-authored fixture, or a future
-adapter's export. Loaded via
+any source: a hand-authored fixture, or an adapter's normalization of an
+external runtime's log. The harness itself never produces a trace by running
+an agent. Loaded via
 `src/agent_eval/trace/import_recorded.py:import_recorded_trace`.
 
 This is where the paired `coding-agent-bugfix` trajectories live:
@@ -15,9 +16,11 @@ trimmed copy of the good trace with `"complete": false` and an
 `"incompleteness_reason"`, used to exercise the GUI's and reconciliation's
 `INSUFFICIENT_EVIDENCE` path for a truncated trace.
 
-The `controlled-workspace-decision-brief` scenario does not use this
-directory — it runs live via Inspect + a scripted mockllm instead
-(`src/agent_eval/tasks/decision_brief.py`), with its trajectories normalized
-by `src/agent_eval/trace/inspect_adapter.py` rather than recorded here.
+`decision-brief-candidate-1.json` and `decision-brief-candidate-2.json` are the
+paired traces for `controlled-workspace-decision-brief`: candidate 1 skips a
+required source, reads an unapproved one, and validates before its last write
+(expected `FAIL`); candidate 2 is a valid process (expected `PASS`). Their
+expected verdicts live under
+`scenarios/controlled-workspace-decision-brief/expected/`.
 
-See `expected/` for the verdicts each trace is expected to produce.
+See `expected/` for the verdicts each coding-bugfix trace is expected to produce.
