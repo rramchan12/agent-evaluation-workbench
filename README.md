@@ -121,6 +121,11 @@ logs) plug in through its own trace adapter without any change to `core/` or `ev
 [ARCHITECTURE.md §8, Stage
 4](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)).
 
+The authoritative runtime-adapter contract, supported sources, and integration
+guides live under [`docs/adapters/`](./docs/adapters/index.md). Runtime-specific
+projects may generate traces elsewhere while the workbench retains the
+canonical trajectory schema and importer conformance tests.
+
 ```mermaid
 flowchart LR
     SCENARIO["Scenario<br/>Requirements + Fixtures"] --> RUNTIME
@@ -194,6 +199,8 @@ as a new runtime itself.
   pair, one new trace adapter — see [ARCHITECTURE.md
   §8](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)) is a smaller,
   concrete first slice of this larger plan, not a replacement for it.
+- [`docs/adapters/`](./docs/adapters/index.md) — the canonical adapter
+  boundary, authoring contract, and source-specific integration guides.
 
 ## Layout
 

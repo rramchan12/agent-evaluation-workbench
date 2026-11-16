@@ -8,6 +8,13 @@ trace pair) is underway as Stage 4's near-term work — see [ARCHITECTURE.md
 **Targets:** Microsoft Agent Framework, Google ADK, LangGraph, LangSmith,
 Inspect AI, Pydantic Evals, and Promptfoo
 
+Runtime-specific importers follow the canonical
+[adapter authoring contract](./docs/adapters/authoring.md). The runnable MAF
+experiment is maintained separately in
+[`maf-evaluation-pilot`](https://github.com/rramchan12/maf-evaluation-pilot);
+this workbench retains normalized fixtures, importer tests, and benchmark
+results.
+
 ## Benchmark question
 
 How much native or affiliated framework support is available for this chain,
