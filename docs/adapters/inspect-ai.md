@@ -1,15 +1,18 @@
 # Inspect AI adapter
 
-Inspect AI is the workbench's first live runtime integration, not a dependency
-of the framework-neutral evaluation core.
+Status: **removed; candidate for a future adapter.**
 
-[`inspect_adapter.py`](../../src/agent_eval/trace/inspect_adapter.py) converts
-successful Inspect sample logs into canonical trajectories. The `agent-eval
-run` command executes an Inspect task, normalizes its log, and evaluates the
-result. A saved trajectory can later be replayed with `agent-eval evaluate`
-without rerunning Inspect or the model.
+The harness never runs Inspect AI or any other agent runtime. An earlier
+revision drove Inspect tasks and normalized their eval logs
+(`trace/inspect_adapter.py`, `agent-eval run`); that coupling was removed so the
+harness only ingests traces (see [ARCHITECTURE.md §0](../../ARCHITECTURE.md)).
 
-## Source-specific behavior
+Inspect AI remains a legitimate trace source. A new adapter would convert an
+Inspect eval log, produced by Inspect outside this harness, into a canonical
+`Trajectory`, and `agent-eval evaluate` would then score it like any other
+trace.
+
+## Source-specific behavior to preserve
 
 - Resolve Inspect attachment placeholders before reading tool arguments and
   results.
@@ -17,6 +20,4 @@ without rerunning Inspect or the model.
 - Treat the runtime log as the source of execution truth; evaluators operate
   only after normalization.
 
-See [Authoring an adapter](./authoring.md) for the shared contract and
-[`src/agent_eval/tasks/README.md`](../../src/agent_eval/tasks/README.md) for
-the current Inspect task integration.
+See [Authoring an adapter](./authoring.md) for the shared contract.

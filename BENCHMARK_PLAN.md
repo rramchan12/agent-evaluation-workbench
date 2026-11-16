@@ -52,7 +52,8 @@ The benchmark requirements are:
 
 ## Canonical traces
 
-Generate these once in the framework-neutral simulator. Every adapter receives
+Generate these once in the framework-neutral simulator (outside the harness; it
+only produces trace files). Every adapter receives
 the same trace content and expected requirement verdicts.
 
 | ID | Behavior | Expected release result |
@@ -92,7 +93,10 @@ Discovery-derived checks:
 
 ## Track B: Native scripted execution
 
-Implement the same deterministic behavior in each applicable runtime:
+This track measures each framework on its own, outside this harness, which
+never runs the agents; each scripted run's trace is then ingested through that
+framework's adapter as in Track A. Implement the same deterministic behavior in
+each applicable runtime:
 
 - valid agent;
 - process-violation agent;

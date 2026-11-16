@@ -1,6 +1,6 @@
 # Microsoft Agent Framework integration
 
-Microsoft Agent Framework (MAF) is the planned second live runtime integration
+Microsoft Agent Framework (MAF) is the planned first external-runtime trace source
 and the first portability proof for the workbench's framework-neutral
 evaluation core.
 
