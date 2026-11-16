@@ -93,7 +93,7 @@ It checks both the result and the path taken to produce it.
 %%{init: {"flowchart": {"curve": "linear", "nodeSpacing": 40, "rankSpacing": 55}}}%%
 flowchart LR
 
-    subgraph SYSTEM["AGENT EVALUATION HARNESS"]
+    subgraph SYSTEM["AGENT EVALUATION SYSTEM"]
         direction LR
 
         SCENARIO["Scenario<br/>Task · Requirements · Fixtures"]
@@ -106,16 +106,16 @@ flowchart LR
             TOOLS["Tools · Workspace · Fixtures"]
         end
 
-        INSPECT["Agent Runtime<br/>Execution · Sandbox · Trace Capture<br/>(external; not run by the harness)"]
+        INSPECT["Agent Runtime (external)<br/>Execution · Sandbox · Trace Capture<br/>never run by the harness"]
 
-        EVALUATE["Evaluation Extension<br/>Evidence Selection · Evaluators · Reconciliation"]
+        EVALUATE["Evaluation Harness<br/>Trace Adapter · Evidence Selection · Evaluators · Reconciliation"]
 
         RESULT["Evaluation Result<br/>Requirement Verdicts · Release Decision · Report"]
 
         SCENARIO --> INSPECT
         INSPECT <--> AGENT
         AGENT <--> TOOLS
-        INSPECT --> EVALUATE
+        INSPECT -->|trace via adapter| EVALUATE
         SCENARIO --> EVALUATE
         EVALUATE --> RESULT
     end
@@ -132,14 +132,14 @@ flowchart LR
     style RESULT fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#450a0a
 ```
 
-**Boundary legend:** blue = system under test; orange = controlled test environment; green and purple = harness components. Section 4 defines these boundaries.
+**Boundary legend:** blue = system under test; orange = controlled test environment; green = the external agent runtime, which records the trace but is never run by this project; purple and red = the harness (adapter, evaluation, report). Section 4 defines these boundaries.
 
 The run has six steps:
 
 1. A scenario declares the task, requirements, and controlled fixtures.
 2. The agent runtime (external to the harness) invokes the system under test, which acts against the controlled test environment's tools and workspace.
-3. The execution produces a trace, artifacts, and native scorer results.
-4. The evaluation extension maps that evidence to individual requirements.
+3. The execution produces a trace, artifacts, and native scorer results, outside the harness.
+4. The harness ingests the trace through an adapter and maps that evidence to individual requirements.
 5. Evaluators independently judge those requirements.
 6. Reconciliation and release policy produce an evidence-backed result.
 
@@ -173,7 +173,7 @@ Evals, DeepEval, Azure AI Evaluation, and similar libraries provide evaluator
 implementations; and Phoenix, MLflow, and Langfuse provide trace exploration
 and experiment management.
 
-We will use these components instead of rebuilding them.
+We will use these components instead of rebuilding them: they run the agents, and this project ingests their traces through adapters.
 
 We will build the connection they do not share:
 
@@ -313,23 +313,22 @@ The first scenario is a controlled-workspace decision brief: the agent
 inspects approved source material, compares fictional products, writes a
 report, cites its evidence, and validates the final artifact.
 
-### 5.2 Execution through an agent runtime
+### 5.2 Execution happens in an external agent runtime
 
-An agent runtime executes the scenario on the harness's behalf. It invokes
+The harness does not execute the scenario. An agent runtime outside it does: it invokes
 the agent and model, exposes tools, manages the sandbox, applies execution
 limits and approvals, records messages, tool activity, and errors, runs its
 own native scorers if it has them, supports repeated trials, and produces an
-execution log that the harness can later normalize into evidence.
+execution log that the harness later ingests, through an adapter, and normalizes into evidence.
 
-The first runtime this project integrates with is Inspect AI, through a
-dedicated adapter (`trace/inspect_adapter.py`). We start with an Inspect
-extension rather than a fork: if an extension point is missing, we
-contribute a focused upstream patch, and we fork only when a required
-capability cannot be built through stable public APIs. Nothing in this
-section is specific to Inspect AI by design. The authoritative adapter
-contract is documented in [`docs/adapters/`](./docs/adapters/index.md); §6
-and §8's Stage 4 describe how a second runtime plugs into that boundary
-without changing the rest of the harness.
+The first runtime this project was built against was Inspect AI, through an
+adapter that has since been removed (see §0); today traces come from recorded
+files ingested by `trace/import_recorded.py`, and the harness never runs an
+agent itself. Nothing in this section is specific to any one runtime. The
+authoritative adapter contract is documented in
+[`docs/adapters/`](./docs/adapters/README.md); §6 and §8's Stage 4 describe how
+an external runtime such as the Microsoft Agent Framework plugs into that
+boundary without changing the rest of the harness.
 
 ### 5.3 Trace and artifact capture
 
@@ -408,22 +407,22 @@ right-hand column.
 
 | Capability | Owner | Note |
 |---|---|---|
-| Task and dataset execution | Agent runtime (external) | Evaluation extension configures scenario parameters |
+| Task and dataset execution | Agent runtime (external) | Harness configures scenario parameters |
 | Agent and model invocation | Agent runtime (external) | — |
-| Tool and sandbox mechanism | Agent runtime (external) | Evaluation extension defines scenario-specific tool content |
-| Limits and approvals | Agent runtime (external) | Evaluation extension consumes as evidence |
-| Execution log | Agent runtime (external) | Evaluation extension normalizes and references |
-| Native scorers | Agent runtime (external) | Evaluation extension consumes results |
-| Hierarchical requirements | Evaluation extension | — |
-| Requirement evidence selection | Evaluation extension | — |
-| Temporal and policy evaluation | Evaluation extension | Inspect AI approvals provide partial coverage today |
-| Semantic judge integration | Evaluation extension | Agent runtime supports the underlying model invocation |
-| Judgment reconciliation | Evaluation extension | — |
-| Release decision | Evaluation extension | — |
-| Requirement evidence report | Evaluation extension | — |
+| Tool and sandbox mechanism | Agent runtime (external) | Harness defines scenario-specific tool content |
+| Limits and approvals | Agent runtime (external) | Harness consumes as evidence |
+| Execution log | Agent runtime (external) | Harness normalizes and references |
+| Native scorers | Agent runtime (external) | Harness consumes results |
+| Hierarchical requirements | Harness | — |
+| Requirement evidence selection | Harness | — |
+| Temporal and policy evaluation | Harness | Inspect AI approvals provide partial coverage today |
+| Semantic judge integration | Harness | Agent runtime supports the underlying model invocation (the harness only calls a judge model) |
+| Judgment reconciliation | Harness | — |
+| Release decision | Harness | — |
+| Requirement evidence report | Harness | — |
 
 The ownership boundary is: the agent runtime owns execution and raw
-evaluation records; the evaluation extension owns requirement evidence,
+evaluation records; the harness owns requirement evidence,
 judgment reconciliation, and release decisions. [CAPABILITY_DISCOVERY.md](./CAPABILITY_DISCOVERY.md)
 checked how close seven candidate runtimes and evaluation libraries come to
 owning that same right-hand column natively; the comparison table is
@@ -532,8 +531,7 @@ that gap with one concrete, evaluated example before attempting the larger
 
 1. **Microsoft Agent Framework (MAF) trace import** — a new
    `trace/import_maf.py` normalizing a MAF run's native trace/messages into
-   the existing `Trajectory`, alongside `inspect_adapter.py` and
-   `import_recorded.py`. `agent-eval evaluate` auto-detects it. The runnable
+   the existing `Trajectory`, alongside `import_recorded.py`. `agent-eval evaluate` auto-detects it. The runnable
    MAF agent and OpenTelemetry capture experiments live in the separate
    [`maf-evaluation-pilot`](https://github.com/rramchan12/maf-evaluation-pilot)
    repository, keeping MAF dependencies out of this workbench. The importer,

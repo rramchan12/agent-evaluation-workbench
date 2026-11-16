@@ -1,14 +1,16 @@
 # agent_eval
 
-The runtime-neutral evaluation harness package. Agent runtimes own execution,
-tools, and raw traces; this package owns hierarchical requirements, evidence
-selection, pluggable evaluators, reconciliation, and release decisions. Inspect
-AI is the first live runtime integration, not the identity of the harness.
+The runtime-neutral evaluation harness package. It never runs an agent:
+agent runtimes own execution, tools, and raw traces, and this package reads the
+trace they leave behind through adapters (`trace/`). It owns hierarchical
+requirements, evidence selection, pluggable evaluators, reconciliation, and
+release decisions. (Inspect AI was once driven from here and has been removed;
+see ARCHITECTURE.md §0.)
 
 ## Subpackages
 
 - [core/](./core/README.md) — the framework-agnostic requirement/evidence/reconciliation/release layer
-- [trace/](./trace/README.md) — normalizes runtime records into the harness's trajectory model
+- [trace/](./trace/README.md) — the trace adapters that normalize runtime records into the harness's trajectory model
 - [evaluators/](./evaluators/README.md) — generic, config-driven evaluators, registered by ID
 - [reporting/](./reporting/README.md) — renders the requirement-level evidence report
 
@@ -22,4 +24,4 @@ script):
 - `agent-eval calibrate --cases ...` — score a judge against hand-labeled cases
 
 See [ARCHITECTURE.md §5](../../ARCHITECTURE.md) for the full execution model.
-See [`docs/adapters/`](../../docs/adapters/index.md) for the adapter contract.
+See [`docs/adapters/`](../../docs/adapters/README.md) for the adapter contract.

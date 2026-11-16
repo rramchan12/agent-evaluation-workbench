@@ -28,7 +28,8 @@ external capture scripts, and evaluator-only replay.
 The importer assigns canonical event IDs in list order. Use `complete=false`
 and `incompleteness_reason` when the recording is partial.
 
-Run it through the harness with:
+The repository's `traces/` fixtures use this format, including the paired
+`decision-brief-candidate-1/2.json` traces. Run one through the harness with:
 
 ```powershell
 agent-eval evaluate `

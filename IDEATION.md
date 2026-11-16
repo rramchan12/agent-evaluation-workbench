@@ -27,7 +27,7 @@ declared requirement
     -> release decision
 ```
 
-The harness will not replace agent runtimes, domain benchmarks, or tracing products. It will connect them. We will extend an existing execution runtime, store requirement-linked evidence in a portable contract, and let evaluators run again without rerunning the agent.
+The harness will not replace agent runtimes, domain benchmarks, or tracing products. It will connect them. We will ingest the traces those runtimes record, through adapters, store requirement-linked evidence in a portable contract, and let evaluators run again without rerunning the agent.
 
 ---
 
@@ -263,9 +263,9 @@ We considered three approaches:
 - **Build a neutral core and plug runners into it.** This gives us clean boundaries, but creates a real risk of rebuilding execution and tracing.
 - **Publish a specification first.** This is clean on paper, but it gives us no working system to test the contract against.
 
-We will extend an actively maintained, permissively licensed runtime instead of replacing one. Where its public extension points are insufficient, we will make focused upstream contributions.
+**Decision update:** the first build extended Inspect AI, which tied the harness to one runner. We reversed that: the harness now runs no agent at all and reads recorded traces through adapters in `trace/` (see [ARCHITECTURE.md §0](./ARCHITECTURE.md)). The runtime-neutral contract is the `Trajectory` model, and every runtime, Inspect AI included, is a trace source.
 
-We will extract a runtime-neutral contract only after running real trajectories in at least two domains: one research/artifact task and one software task. That sequence keeps the abstraction grounded in working code.
+We extracted that contract after evaluating real trajectories in two domains: one research/artifact task and one software task. That sequence keeps the abstraction grounded in working code.
 
 The roadmap, canonical model, reference scenarios, and selected runtime are in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
