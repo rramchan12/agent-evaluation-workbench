@@ -249,7 +249,7 @@ These rules define the product:
 
 ### 6.3 What we will not build
 
-We will not build another agent runtime, domain benchmark, hosted tracing service, or general policy engine. Those products already exist. We will integrate them.
+We will not build another agent runtime, domain benchmark, hosted tracing service, or general policy engine. Those products already exist. We will ingest their traces through adapters and never run their agents.
 
 The scope test for every feature is:
 

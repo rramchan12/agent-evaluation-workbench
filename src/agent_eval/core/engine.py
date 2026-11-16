@@ -1,9 +1,8 @@
 """The evaluation engine: wires evidence selection, evaluators, reconciliation
 and release policy into one ``evaluate(scenario, trajectory) -> Report`` call.
 
-This is the only function ``cli.py`` needs to call for both the live-run
-path (``agent-eval run``) and the evaluator-only replay path
-(``agent-eval evaluate``) — it never invokes Inspect AI or any agent.
+This is the only function ``cli.py`` and the GUI need to call
+(``agent-eval evaluate``) — it never invokes any agent.
 """
 
 from __future__ import annotations

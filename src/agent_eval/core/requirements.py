@@ -1,6 +1,6 @@
 """The requirement and scenario model.
 
-Framework-agnostic: nothing here knows that Inspect AI exists. A
+Framework-agnostic: nothing here knows how a trajectory was produced. A
 ``Scenario`` is loaded straight from a JSON file; it declares requirements,
 each naming the evaluators (by id) that judge it and the evidence selector
 that scopes what those evaluators are allowed to see.

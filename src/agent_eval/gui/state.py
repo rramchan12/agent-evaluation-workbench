@@ -1,5 +1,5 @@
-"""``st.session_state`` keys/helpers shared by the Run and Replay pages: the
-last ``Report``/``Trajectory`` (or error) and the background-run handle.
+"""``st.session_state`` keys/helpers shared by the GUI pages: the
+last ``Report``/``Trajectory`` (or error).
 """
 
 from __future__ import annotations
@@ -14,14 +14,12 @@ from agent_eval.trace.model import Trajectory
 _REPORT_KEY = "gui_report"
 _TRAJECTORY_KEY = "gui_trajectory"
 _ERROR_KEY = "gui_error"
-_THREAD_KEY = "gui_run_thread"
-_QUEUE_KEY = "gui_run_queue"
 
 
 def init_state() -> None:
     """Ensures every key this module manages exists in session state, so
     pages can read before the first write without a ``KeyError``."""
-    for key in (_REPORT_KEY, _TRAJECTORY_KEY, _ERROR_KEY, _THREAD_KEY, _QUEUE_KEY):
+    for key in (_REPORT_KEY, _TRAJECTORY_KEY, _ERROR_KEY):
         if key not in st.session_state:
             st.session_state[key] = None
 
@@ -54,17 +52,3 @@ def get_trajectory() -> Optional[Trajectory]:
 
 def get_error() -> Optional[str]:
     return st.session_state.get(_ERROR_KEY)
-
-
-def set_run_handle(thread, progress_queue) -> None:
-    st.session_state[_THREAD_KEY] = thread
-    st.session_state[_QUEUE_KEY] = progress_queue
-
-
-def get_run_handle():
-    return st.session_state.get(_THREAD_KEY), st.session_state.get(_QUEUE_KEY)
-
-
-def clear_run_handle() -> None:
-    st.session_state[_THREAD_KEY] = None
-    st.session_state[_QUEUE_KEY] = None

@@ -15,11 +15,11 @@ A scenario contains:
   `src/agent_eval/evaluators/README.md`) — never new evaluator code
 - fixture content (a `template/`, a `workspace/`, or similar) — whatever the
   agent needs to act against
-- for scenarios evaluated from a recorded trace rather than a live Inspect
-  run (e.g. `coding-agent-bugfix`), the corresponding trace lives under the
-  top-level `traces/` directory, with its expected verdicts in `expected/`
+- the recorded trace of the agent's run lives under the top-level `traces/`
+  directory, with its expected verdicts in `expected/` (or scenario-locally, as for
+  `controlled-workspace-decision-brief`)
 
-The agent being evaluated is supplied externally, at run time — it is never
+The agent being evaluated runs outside this harness; only its recorded trace is supplied — it is never
 part of a scenario definition.
 
 ## judge-calibration/

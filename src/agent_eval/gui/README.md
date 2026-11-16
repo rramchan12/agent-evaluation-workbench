@@ -13,22 +13,19 @@ streamlit run src/agent_eval/gui/app.py
 ## Layout
 
 - `app.py` — Streamlit multipage entry point (sidebar + shared intro text).
-- `pages/1_run.py` — select a scenario + candidate + model, launch a live
-  Inspect AI run in a background thread, watch progress to completion or a
-  readable error.
-- `pages/2_replay.py` — select a scenario + a `traces/`-fixture or an
-  uploaded trajectory/trace JSON, evaluate it directly (no Inspect AI, no
+- `pages/1_replay.py` — select a scenario + a `traces/`-fixture or an
+  uploaded trajectory/trace JSON, evaluate it directly (no agent, no
   model call).
-- `pages/3_review.py` — Stage 3 human review: lists requirements at
-  `REVIEW_REQUIRED` / `INSUFFICIENT_EVIDENCE` (from the last Run/Replay
+- `pages/2_review.py` — Stage 3 human review: lists requirements at
+  `REVIEW_REQUIRED` / `INSUFFICIENT_EVIDENCE` (from the last Replay
   result or an uploaded `report.json`), records a reviewer verdict, and
   recomputes the release decision with `apply_human_review` (same as
   `agent-eval review`).
-- `pages/4_calibration.py` — Stage 3 judge calibration: runs
+- `pages/3_calibration.py` — Stage 3 judge calibration: runs
   `scenarios/*/cases.json` (or an upload) through `run_calibration_file`
   and shows accuracy against a minimum threshold (same as
   `agent-eval calibrate`).
-- `results_view.py` — the shared report renderer both pages call: release
+- `results_view.py` — the shared report renderer the pages call: release
   decision banner, per-requirement cards, per-judgment rows, an evidence
   expander resolving event ids to their actual `Event`, and a visible
   "evaluators disagreed" flag.
@@ -38,13 +35,8 @@ streamlit run src/agent_eval/gui/app.py
 - `trajectory_loader.py` — loads either a saved `Trajectory` JSON or a
   recorded step-list trace JSON, auto-detected by the presence of a
   top-level `"steps"` key (mirrors `cli.py`'s `--trajectory` handling).
-- `background.py` — `start_live_run(...)`: wraps the same
-  `inspect_eval` -> `eval_log_to_trajectories` -> `core.engine.evaluate`
-  sequence `cli.cmd_run` calls, in a background thread, reporting progress
-  through a `queue.Queue[RunProgress]` and turning any exception into a
-  `stage="error"` item instead of letting it crash the thread silently.
 - `state.py` — `st.session_state` keys/helpers for the last result (or
-  error) and the background-run handle.
+  error).
 
 `formatting.py` and `scenario_catalog.py` import no Streamlit; they are
 exercised directly by `tests/unit/test_gui_formatting.py` and
@@ -62,11 +54,6 @@ on what PASS/FAIL/REVIEW_REQUIRED/INSUFFICIENT_EVIDENCE look like.
 
 ## Scenario content
 
-The only change this adds to existing scenario content is one additive,
-optional metadata key:
-`scenarios/controlled-workspace-decision-brief/scenario.json`'s
-`metadata.inspect_task` now points at
-`agent_eval.tasks.decision_brief:decision_brief`, telling the Run page
-which Inspect task factory to use. `coding-agent-bugfix/scenario.json` has
-no `inspect_task` key, so it stays replay-only in the Run page (its only
-path is the Replay page), which is its current, correct status.
+The GUI adds nothing to scenario content: every scenario is evaluated by
+replaying a trace, and there is no live-run page because the harness never
+runs an agent.

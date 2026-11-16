@@ -7,7 +7,6 @@ be. This turns the `coding-agent-bugfix` scenario into a regression test:
 asserts its result matches the corresponding file here
 (`coding-bugfix-good.json`, `coding-bugfix-bad.json`).
 
-The `controlled-workspace-decision-brief` scenario does not use this
-directory: it is run live via Inspect + a scripted mockllm, so its expected
-verdicts live scenario-locally instead, under
+The `controlled-workspace-decision-brief` scenario's recorded traces also live
+in `traces/`, but its expected verdicts live scenario-locally instead, under
 `scenarios/controlled-workspace-decision-brief/expected/`.

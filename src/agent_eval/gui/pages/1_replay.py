@@ -1,7 +1,7 @@
 """Replay tab: pick a scenario and either an existing trace/trajectory
 fixture or an uploaded JSON file, evaluate it directly against
-``core.engine.evaluate`` -- no Inspect AI, no model call -- and render the
-same results view the Run tab uses.
+``core.engine.evaluate`` -- no agent, no model call -- and render the
+results view shared with the Review tab.
 """
 
 from __future__ import annotations

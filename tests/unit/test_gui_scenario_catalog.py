@@ -19,21 +19,11 @@ def test_discover_scenarios_finds_both_scenarios_alphabetically():
     assert ids == sorted(ids)
 
 
-def test_discover_scenarios_inspect_task_only_on_decision_brief():
-    infos = {info.id: info for info in discover_scenarios()}
 
-    assert infos["controlled-workspace-decision-brief"].inspect_task == (
-        "agent_eval.tasks.decision_brief:decision_brief"
-    )
-    assert infos["coding-agent-bugfix"].inspect_task is None
+def test_discover_traces_includes_decision_brief_recorded_traces():
+    names = {p.stem for p in discover_traces(scenario_id="controlled-workspace-decision-brief")}
 
-
-def test_discover_scenarios_candidates_populated_when_present():
-    infos = {info.id: info for info in discover_scenarios()}
-
-    decision_brief = infos["controlled-workspace-decision-brief"]
-    assert len(decision_brief.candidates) >= 1
-    assert all(p.suffix == ".json" for p in decision_brief.candidates)
+    assert {"decision-brief-candidate-1", "decision-brief-candidate-2"} <= names
 
 
 def test_discover_traces_finds_known_fixtures():

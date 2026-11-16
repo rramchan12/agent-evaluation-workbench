@@ -9,14 +9,19 @@ not just whether their final output looks correct.
 Stages 1 through 3 are implemented: a requirement, evidence, reconciliation,
 and release core that has no dependency on any particular agent runtime; a
 generic deterministic and semantic evaluator set, made up of a deterministic
-`fake_judge` and a real model-backed `real_judge`; a runtime adapter and task
-for the `controlled-workspace-decision-brief` scenario, currently built
-against Inspect AI as the first runtime this project integrates with; a
-recorded-trace path for the `coding-agent-bugfix` scenario that needs no
-runtime at all; judge calibration and human-review CLI commands; a CLI
-(`agent-eval run`, `agent-eval evaluate`, `agent-eval review`, and
-`agent-eval calibrate`); a Streamlit GUI for the run and replay flows; and a
-unit and integration test suite of 85 tests, all passing.
+`fake_judge` and a real model-backed `real_judge`; recorded traces for both the
+`controlled-workspace-decision-brief` and `coding-agent-bugfix` scenarios,
+ingested through a trace adapter; judge calibration and human-review CLI
+commands; a CLI (`agent-eval evaluate`, `agent-eval review`, and
+`agent-eval calibrate`); a Streamlit GUI for the replay, review and
+calibration flows; and a unit and integration test suite of 86 tests, all
+passing.
+
+The harness **never runs an agent**. Agents run elsewhere, in whatever runtime
+they live in; this project only reads the trace they leave behind, through
+adapters in `src/agent_eval/trace/`, and does the evaluation. (An earlier
+revision drove agents through Inspect AI and a scripted runner; that coupling
+has been removed. See [ARCHITECTURE.md](./ARCHITECTURE.md) §0.)
 
 This is an early (v0.1) release: some checks are intentionally simple (for
 example, required inspection is presence-only, with no ordering evaluator
@@ -30,18 +35,15 @@ Licensed under the [MIT License](./LICENSE); cite via [CITATION.cff](./CITATION.
 
 ```powershell
 pip install -e .
-python -m pytest -q                        # 85 unit + integration tests
+python -m pytest -q                        # 86 unit + integration tests
 
-# A live run through the current runtime adapter (Inspect AI) against the
-# decision-brief scenario, then evaluate
-agent-eval run `
+# Evaluate a recorded trace of the decision-brief scenario (no agent execution)
+agent-eval evaluate `
   --scenario scenarios/controlled-workspace-decision-brief/scenario.json `
-  --task agent_eval.tasks.decision_brief:decision_brief `
-  --candidate scenarios/controlled-workspace-decision-brief/candidates/candidate-2.json `
-  --model mockllm/model `
+  --trajectory traces/decision-brief-candidate-2.json `
   --out-dir out
 
-# Evaluator-only replay (no agent execution) against a saved trajectory
+# Same for the coding-agent-bugfix scenario
 agent-eval evaluate `
   --scenario scenarios/coding-agent-bugfix/scenario.json `
   --trajectory traces/coding-bugfix-good.json `
@@ -56,8 +58,8 @@ agent-eval review --report out/report.json
 agent-eval review --report out/report.json --decisions decisions.json --out-dir out
 ```
 
-Both `run` and `evaluate` exit non-zero when the release decision is `FAIL`,
-so either can gate a CI job; `calibrate` exits non-zero when accuracy falls
+`evaluate` exits non-zero when the release decision is `FAIL`, so it can
+gate a CI job; `calibrate` exits non-zero when accuracy falls
 below `--min-accuracy` (default 1.0).
 
 ## GUI
@@ -70,23 +72,23 @@ pip install -e ".[gui]"
 streamlit run src/agent_eval/gui/app.py
 ```
 
-It has two pages, reachable from the sidebar:
+It has three pages, reachable from the sidebar:
 
-- **Run** — pick a scenario and candidate, launch a live evaluation through
-  the current runtime adapter (Inspect AI, with a scripted and free
-  `mockllm/model` by default) in a background thread, and watch the same
-  release decision and per-requirement report the CLI would produce,
-  rendered live.
-- **Replay** — pick a scenario and upload a saved trajectory or recorded
-  step-list trace JSON (no agent execution, no model calls) to replay it
-  through the evaluators and see the resulting report — useful for
-  iterating on requirements/evaluators against a trace you already have.
+- **Replay** — pick a scenario and a recorded trace (from `traces/`) or upload
+  a saved trajectory or recorded step-list trace JSON (no agent execution, no
+  model calls) to evaluate it through the evaluators and see the resulting
+  report — useful for iterating on requirements/evaluators against a trace
+  you already have.
+- **Review** — resolve requirements that need a human decision.
+- **Calibration** — score a judge against hand-labeled cases.
 
-Run tab, `controlled-workspace-decision-brief` + `candidate-2`, a clean PASS:
+Replay tab, `controlled-workspace-decision-brief` + the recorded
+`decision-brief-candidate-2` trace, a clean PASS:
 
-![Run tab: a clean PASS](docs/screenshots/run-complete-pass.png)
+![Replay tab: a clean PASS](docs/screenshots/replay-pass.png)
 
-Replay tab, the same scenario + `candidate-1`'s trajectory, an overall FAIL
+Replay tab, the same scenario + the recorded `decision-brief-candidate-1`
+trace, an overall FAIL
 with one requirement where the deterministic and semantic evaluators
 disagreed:
 
@@ -96,7 +98,7 @@ disagreed:
 
 Every scenario declares a small set of **requirements** — obligations,
 prohibitions, and verifications — that an agent's run must satisfy. While
-the agent works, the runtime it is executing on records what actually
+the agent works, the runtime it is executing on (outside this harness) records what actually
 happened as a **trajectory** of tool calls and results, and that trajectory
 is the **evidence** this harness evaluates. For each requirement, one or
 more **evaluators** examine the relevant evidence and each return an
@@ -111,11 +113,11 @@ requirement's verdict up into one pass-or-fail outcome for the whole run.
 The diagram below shows where the boundary sits. The agent runtime owns
 execution and the raw record of what happened; this harness and its GUI own
 requirement evidence, judgment reconciliation, and the release decision, and
-that half of the system has no dependency on any particular runtime. Inspect
-AI is simply the first runtime this boundary has been proven against,
-through `trace/inspect_adapter.py`; the same boundary is what should let a
-second runtime, such as the Microsoft Agent Framework, plug in through its
-own adapter without any change to `core/` or `evaluators/` (see
+that half of the system has no dependency on any particular runtime and never
+runs one. Inspect AI was once driven from here; that coupling has been
+removed, leaving recorded traces ingested through an adapter. The same
+boundary lets a runtime such as the Microsoft Agent Framework (or Inspect
+logs) plug in through its own trace adapter without any change to `core/` or `evaluators/` (see
 [ARCHITECTURE.md §8, Stage
 4](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)).
 
@@ -129,13 +131,13 @@ flowchart LR
     SCENARIO["Scenario<br/>Requirements + Fixtures"] --> RUNTIME
     SCENARIO --> EVALUATE
 
-    subgraph RUNTIME["Agent runtime (swappable)"]
+    subgraph RUNTIME["Agent runtime (external, not run by the harness)"]
         direction TB
-        INSPECT["Inspect AI<br/>in use today"]
+        INSPECT["Recorded trace<br/>in use today"]
         MAF["Microsoft Agent Framework<br/>Stage 4 target"]
     end
 
-    RUNTIME -->|trajectory| EVALUATE["Evaluation core<br/>Evidence · Evaluators · Reconciliation"]
+    RUNTIME -->|trace via adapter| EVALUATE["Evaluation core<br/>Evidence · Evaluators · Reconciliation"]
     EVALUATE --> RESULT["Release decision + report"]
 
     style RUNTIME fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#172554
@@ -155,6 +157,12 @@ judgment, reconciliation, and release chain this harness implements, using
 only documentation and canonical repositories as sources. The summary table
 below is reproduced from that document; see it for sources, per-framework
 detail, and the classification method.
+
+> **How to read this table.** The harness never runs any of these frameworks.
+> They are the *trace sources*: each agent runs in its own runtime and this
+> project only ingests the resulting trace through an adapter (`trace/`) and
+> evaluates it. "Native strength" and "Stored-run evaluation" describe what
+> the framework offers on its own, which is what this harness is compared to.
 
 | Framework | Native strength | Stored-run evaluation | Repetition | Stateful execution and HITL | Disagreement and abstention | CI gate | Local without hosted account |
 |---|---|---|---|---|---|---|---|
@@ -179,15 +187,16 @@ as a new runtime itself.
   evaluation has developed, the gap in existing tools, and the resulting niche.
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — the system design that acts on that
   niche: the system-under-test boundary, the canonical requirement/evidence
-  model, the runtime adapter model (Inspect AI today), and the staged
+  model, the trace adapter model, and the staged
   delivery roadmap.
 - [CAPABILITY_DISCOVERY.md](./CAPABILITY_DISCOVERY.md) — the sourced,
   per-framework detail behind the comparison table above, including
   citations and the classification method.
 - [BENCHMARK_PLAN.md](./BENCHMARK_PLAN.md) — the planned, ten-trace,
   seven-framework benchmark that will eventually turn that comparison into
-  measured evidence. Stage 4's near-term scope (one framework, one trace
-  pair, one new adapter — see [ARCHITECTURE.md
+  measured evidence, by evaluating each framework's recorded traces. Stage 4's
+  near-term scope (one framework, one trace
+  pair, one new trace adapter — see [ARCHITECTURE.md
   §8](./ARCHITECTURE.md#stage-4-ecosystem-integration--next)) is a smaller,
   concrete first slice of this larger plan, not a replacement for it.
 - [`docs/adapters/`](./docs/adapters/index.md) — the canonical adapter
@@ -196,7 +205,7 @@ as a new runtime itself.
 ## Layout
 
 ```text
-src/agent_eval/   the evaluation harness package (its first runtime adapter targets Inspect AI)
+src/agent_eval/   the evaluation harness package (no agent-framework dependency)
 src/agent_eval/gui/   the Streamlit evaluation GUI
 scenarios/        declarative task definitions — the "test rack"
 traces/           recorded trajectories for evaluator-only replay

@@ -6,4 +6,4 @@ the result matches the corresponding file in `expected/`.
 
 No agent is executed here — this exercises the same evaluator-only replay
 path as `agent-eval evaluate`, which is the property ARCHITECTURE.md requires
-before any live Inspect execution is added.
+and the harness never executes an agent.

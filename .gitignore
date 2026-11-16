@@ -3,8 +3,5 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .venv/
-inspect-logs/
-inspect-cli-logs/
-inspect-smoke-logs/
 out/
 *.sqlite3

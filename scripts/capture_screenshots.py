@@ -4,10 +4,10 @@ Starts ``streamlit run src/agent_eval/gui/app.py`` as a subprocess, drives it
 with Playwright (headless Chromium), and writes 2 PNGs into
 ``docs/screenshots/``:
 
-- ``run-complete-pass.png``: Run tab, decision-brief scenario, candidate-2
-  (passes cleanly), after the live mockllm run completes.
-- ``replay-fail-disagreement.png``: Replay tab, decision-brief scenario, an
-  uploaded trajectory from candidate-1 (fails, and its
+- ``replay-pass.png``: Replay tab, decision-brief scenario, the recorded
+  ``decision-brief-candidate-2`` trace (passes cleanly).
+- ``replay-fail-disagreement.png``: Replay tab, decision-brief scenario, the
+  recorded ``decision-brief-candidate-1`` trace, uploaded (fails, and its
   ``approved-sources-only`` requirement shows evaluator disagreement -- the
   deterministic ``forbidden_access`` evaluator says FAIL while the semantic
   ``grounding-judge-v1`` says PASS).
@@ -32,7 +32,6 @@ import sys
 import time
 from contextlib import closing
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCREENSHOTS_DIR = REPO_ROOT / "docs" / "screenshots"
@@ -54,30 +53,6 @@ def _wait_for_server(port: int, timeout: float = 30.0) -> None:
         except OSError:
             time.sleep(0.5)
     raise RuntimeError(f"Streamlit server did not come up on port {port} in time")
-
-
-def _make_candidate1_trajectory_json(tmp_dir: Path) -> Path:
-    """Runs candidate-1 through Inspect AI (mockllm, free) once, and saves
-    the resulting trajectory as plain JSON -- this is what a user would
-    upload to the Replay tab. Not committed; written to a temp dir and
-    cleaned up after the screenshot is taken."""
-    import agent_eval.evaluators  # noqa: F401  (registers built-in evaluators)
-    from inspect_ai import eval as inspect_eval
-
-    from agent_eval.core.requirements import load_scenario
-    from agent_eval.tasks.decision_brief import decision_brief
-    from agent_eval.trace.inspect_adapter import eval_log_to_trajectories
-
-    scenario_dir = REPO_ROOT / "scenarios" / "controlled-workspace-decision-brief"
-    scenario = load_scenario(scenario_dir / "scenario.json")
-    task = decision_brief(candidate_path=scenario_dir / "candidates" / "candidate-1.json")
-    logs = inspect_eval(
-        task, model="mockllm/model", log_dir=str(tmp_dir / "inspect-logs"), display="none"
-    )
-    trajectory = eval_log_to_trajectories(logs[0], scenario_id=scenario.id)[0]
-    out_path = tmp_dir / "candidate-1-trajectory.json"
-    trajectory.save(out_path)
-    return out_path
 
 
 def _select_streamlit_option(page, label: str, option_text: str) -> None:
@@ -114,11 +89,7 @@ def main() -> None:
 
     SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-    tmp_handle = TemporaryDirectory()
-    tmp_dir = Path(tmp_handle.name)
-    # Computed before Playwright starts: Inspect AI's own asyncio runner and
-    # Playwright's sync API cannot share a thread/event loop.
-    trajectory_path = _make_candidate1_trajectory_json(tmp_dir)
+    fail_trace_path = REPO_ROOT / "traces" / "decision-brief-candidate-1.json"
 
     port = _free_port()
     server = subprocess.Popen(
@@ -145,18 +116,23 @@ def main() -> None:
             browser = pw.chromium.launch()
             page = browser.new_page(viewport={"width": 1280, "height": 900})
 
-            # --- Run tab: decision-brief + candidate-2, clean PASS ---
+            # --- Replay tab: decision-brief + recorded candidate-2, clean PASS ---
             page.goto(base_url, wait_until="networkidle")
-            page.get_by_role("link", name="run").click()
+            page.get_by_role("link", name="replay").click()
             page.wait_for_load_state("networkidle")
-            _select_streamlit_option(page, "Candidate", "candidate-2")
-            page.get_by_role("button", name="Run evaluation").click()
-            page.get_by_text("Run complete").wait_for(timeout=30_000)
-            page.get_by_text("validate-after-last-write").wait_for(timeout=20_000)
+            _select_streamlit_option(
+                page, "Scenario", "Controlled Workspace Decision Brief"
+            )
+            _select_streamlit_option(
+                page, "Trajectory source", "decision-brief-candidate-2"
+            )
+            page.get_by_role("button", name="Evaluate").click()
+            page.get_by_text("Release decision").wait_for(timeout=15_000)
+            page.get_by_text("validate-after-last-write").wait_for(timeout=15_000)
             page.wait_for_timeout(1000)
-            _screenshot_fitted(page, SCREENSHOTS_DIR / "run-complete-pass.png")
+            _screenshot_fitted(page, SCREENSHOTS_DIR / "replay-pass.png")
 
-            # --- Replay tab: decision-brief + candidate-1, FAIL + disagreement ---
+            # --- Replay tab: decision-brief + candidate-1 (uploaded), FAIL + disagreement ---
             page.goto(base_url, wait_until="networkidle")
             page.get_by_role("link", name="replay").click()
             page.wait_for_load_state("networkidle")
@@ -164,7 +140,7 @@ def main() -> None:
                 page, "Scenario", "Controlled Workspace Decision Brief"
             )
             page.locator('[data-testid="stFileUploaderDropzoneInput"]').set_input_files(
-                str(trajectory_path)
+                str(fail_trace_path)
             )
             page.wait_for_timeout(1000)
             page.get_by_role("button", name="Evaluate").click()
@@ -180,7 +156,6 @@ def main() -> None:
             server.wait(timeout=10)
         except subprocess.TimeoutExpired:
             server.kill()
-        tmp_handle.cleanup()
 
     print(f"Wrote screenshots to {SCREENSHOTS_DIR}")
 

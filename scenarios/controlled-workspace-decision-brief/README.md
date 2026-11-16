@@ -9,10 +9,12 @@ its last write.
 Tools: `search_workspace`, `read_artifact`, `write_artifact`,
 `validate_artifact`.
 
-## Paired trajectories
+## Paired recorded traces
 
-The scenario's value is best demonstrated by two trajectories that produce a
-comparably strong final report:
+The agent runs outside this harness; its recorded traces are
+`traces/decision-brief-candidate-1.json` and `-2.json`. The scenario's value is
+best demonstrated by these two traces, which produce a comparably strong final
+report:
 
 - **Candidate 1** — skips a required source, reads an unapproved document,
   and validates before (not after) the final write. Expected release
@@ -29,4 +31,5 @@ not output quality, distinguishes them.
 
 - `template/` — the report template the agent must preserve
 - `workspace/` — the synthetic corpus (approved documents plus one
-  unapproved document)
+  unapproved document) the recorded agent worked against
+- `expected/` — the expected verdicts for each recorded trace

@@ -10,9 +10,7 @@ readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Ravi Ramchandran" }]
 requires-python = ">=3.11"
-dependencies = [
-    "inspect-ai>=0.3.285",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
