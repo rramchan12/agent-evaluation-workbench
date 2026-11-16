@@ -318,10 +318,10 @@ dedicated adapter (`trace/inspect_adapter.py`). We start with an Inspect
 extension rather than a fork: if an extension point is missing, we
 contribute a focused upstream patch, and we fork only when a required
 capability cannot be built through stable public APIs. Nothing in this
-section is specific to Inspect AI by design — §6 and §8's Stage 4 describe
-how a second runtime, such as the Microsoft Agent Framework, is meant to
-plug into the same adapter boundary without changing how the rest of the
-harness works.
+section is specific to Inspect AI by design. The authoritative adapter
+contract is documented in [`docs/adapters/`](./docs/adapters/index.md); §6
+and §8's Stage 4 describe how a second runtime plugs into that boundary
+without changing the rest of the harness.
 
 ### 5.3 Trace and artifact capture
 
@@ -526,12 +526,13 @@ that gap with one concrete, evaluated example before attempting the larger
 1. **Microsoft Agent Framework (MAF) trace import** — a new
    `trace/import_maf.py` normalizing a MAF run's native trace/messages into
    the existing `Trajectory`, alongside `inspect_adapter.py` and
-   `import_recorded.py`. `agent-eval evaluate` auto-detects it. The MAF
-   agent itself is a minimal, local `agent-framework-core` build (no
-   Foundry dependency) reusing the controlled-workspace tool surface, run
-   with a scripted/deterministic chat client for the same reason
-   `decision_brief` uses `mockllm` — a reproducible CI artifact, not a
-   live-model demo.
+   `import_recorded.py`. `agent-eval evaluate` auto-detects it. The runnable
+   MAF agent and OpenTelemetry capture experiments live in the separate
+   [`maf-evaluation-pilot`](https://github.com/rramchan12/maf-evaluation-pilot)
+   repository, keeping MAF dependencies out of this workbench. The importer,
+   sanitized golden traces, and conformance tests remain here beside the
+   canonical schema. See
+   [`docs/adapters/microsoft-agent-framework.md`](./docs/adapters/microsoft-agent-framework.md).
 2. **Trace pair** — one valid-process run and one prohibited-source run
    (the MAF analogue of `candidate-1`/`candidate-2` and `BENCHMARK_PLAN.md`'s
    `T1`/`T2`), so the existing evaluators and reconciliation produce a PASS
